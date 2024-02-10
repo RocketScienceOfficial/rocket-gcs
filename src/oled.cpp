@@ -26,7 +26,7 @@ void OLEDUpdateScreen(OLEDInputData &data)
     switch (StateGetCurrent())
     {
     case SystemState::DASHBOARD:
-        __OLEDDrawProgressBar(0, 0, 72, 9, (uint8_t)(100.0f * (data.rssi + 164.0f) / 164.0f));
+        _OLEDDrawProgressBar(0, 0, 72, 9, (uint8_t)(100.0f * (data.rssi + 164.0f) / 164.0f));
 
         s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
         s_Display.setFont(ArialMT_Plain_10);
@@ -42,7 +42,7 @@ void OLEDUpdateScreen(OLEDInputData &data)
         s_Display.drawStringf(0, 43, s_Buffer, "%c%.7f", ' ', data.lat);
         s_Display.drawStringf(0, 52, s_Buffer, "%c%.7f", ' ', data.lon);
 
-        __OLEDDrawBatteryIndicator(110, 36, 30, 15, data.batteryPercentage);
+        _OLEDDrawBatteryIndicator(110, 36, 30, 15, data.batteryPercentage);
         break;
     case SystemState::NAVIGATION:
         s_Display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -55,7 +55,7 @@ void OLEDUpdateScreen(OLEDInputData &data)
         s_Display.setFont(ArialMT_Plain_10);
         s_Display.drawStringf(75, 52, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
 
-        __OLEDDrawCompass(103, 39, 0.0f, 0.0f, 0.0f);
+        _OLEDDrawCompass(103, 39, 0.0f, 0.0f, 0.0f);
         break;
     default:
         break;
@@ -64,7 +64,7 @@ void OLEDUpdateScreen(OLEDInputData &data)
     s_Display.display();
 }
 
-void __OLEDDrawProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress)
+void _OLEDDrawProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress)
 {
     uint16_t radius = height / 2;
     uint16_t xRadius = x + radius;
@@ -90,7 +90,7 @@ void __OLEDDrawProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t heig
     s_Display.setColor(WHITE);
 }
 
-void __OLEDDrawCompass(uint16_t x, uint16_t y, float angle, float pitch, float roll)
+void _OLEDDrawCompass(uint16_t x, uint16_t y, float angle, float pitch, float roll)
 {
     s_Display.drawCircle(x, y, 23);
     s_Display.drawCircle(x, y, 10);
@@ -114,7 +114,7 @@ void __OLEDDrawCompass(uint16_t x, uint16_t y, float angle, float pitch, float r
     s_Display.drawLine(x2, y2, x0, y0);
 }
 
-void __OLEDDrawBatteryIndicator(uint16_t x, uint16_t y, uint16_t width, uint16_t height, int percentage)
+void _OLEDDrawBatteryIndicator(uint16_t x, uint16_t y, uint16_t width, uint16_t height, int percentage)
 {
     const uint8_t MAX_STEPS_COUNT = 4;
     const uint16_t TOTAL_STEP_WIDTH = width / MAX_STEPS_COUNT;

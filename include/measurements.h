@@ -15,5 +15,4 @@ struct MeasurementData
 };
 
 void SetMeasurementData(MeasurementData *data);
-
 MeasurementData GetCurrentMeasurement();

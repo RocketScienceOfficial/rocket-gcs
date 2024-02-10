@@ -5,7 +5,7 @@
 #include <Wire.h>
 
 static PMUData s_CurrentData;
-static XPowersLibInterface *s_PMU = NULL;
+static XPowersLibInterface *s_PMU;
 static bool s_PMUInterrupt;
 
 static void __SetPmuFlag()

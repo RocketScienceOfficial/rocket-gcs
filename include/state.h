@@ -10,6 +10,5 @@ enum class SystemState
 
 void StateInit();
 void StateCheck();
-
 bool StateChanged();
 SystemState StateGetCurrent();

@@ -1,4 +1,5 @@
 #include "radio.h"
+#include "radiolink.h"
 #include "config.h"
 #include "measurements.h"
 #include <Arduino.h>
@@ -8,7 +9,6 @@
 static int s_Rssi;
 static int s_RX;
 static int s_TX;
-static uint8_t s_Buffer[256];
 
 void LoRaInit()
 {
@@ -45,19 +45,40 @@ void LoRaCheck()
         Serial.print(packetSize);
         Serial.println(" bytes");
 
-        memset(s_Buffer, 0, sizeof(s_Buffer));
+        uint8_t buffer[512];
+        size_t i = 0;
 
         while (LoRa.available())
         {
-            uint8_t data = (uint8_t)LoRa.read();
-
-            memcpy(s_Buffer, &data, sizeof(data));
+            buffer[i++] = (uint8_t)LoRa.read();
         }
 
         s_Rssi = LoRa.packetRssi();
         s_RX++;
 
-        __LoRaHandlePacket();
+        radiolink_frame_t frame = {0};
+
+        if (!radiolink_deserialize(&frame, buffer, i))
+        {
+            return;
+        }
+
+        radiolink_sensor_frame_t *newFrame = (radiolink_sensor_frame_t *)frame.payload;
+
+        MeasurementData measurement = {
+            .pos_x = 0,
+            .pos_y = 0,
+            .pos_z = 0,
+            .roll = 0,
+            .pitch = 0,
+            .yaw = 0,
+            .latitude = 0,
+            .longitude = 0,
+            .altitude = 0,
+            .velocity = 0,
+        };
+
+        SetMeasurementData(&measurement);
     }
 }
 
@@ -74,47 +95,4 @@ int LoRaGetRX()
 int LoRaGetTX()
 {
     return s_TX;
-}
-
-void __LoRaHandlePacket()
-{
-    __LoRaBufferEncryptDecrypt(s_Buffer, sizeof(s_Buffer));
-
-    RadioPacket packet = {0};
-
-    memcpy(&packet, s_Buffer, sizeof(RadioPacket));
-
-    if (memcmp(packet.header.signature, RADIO_PACKET_SIGNATURE, sizeof(RADIO_PACKET_SIGNATURE)) != 0)
-    {
-        Serial.println("Invalid packet signature!");
-
-        return;
-    }
-
-    if (packet.body.payloadSize != sizeof(MeasurementData))
-    {
-        Serial.println("Invalid payload size!");
-
-        return;
-    }
-
-    if (packet.body.command != RADIO_COMMAND_MEASUREMENT)
-    {
-        Serial.println("Invalid command!");
-
-        return;
-    }
-
-    MeasurementData measurement;
-    memcpy(&measurement, packet.body.payload, packet.body.payloadSize);
-
-    SetMeasurementData(&measurement);
-}
-
-void __LoRaBufferEncryptDecrypt(uint8_t *buffer, size_t bufferSize)
-{
-    for (size_t i = 0; i < bufferSize; i++)
-    {
-        buffer[i] ^= RADIO_PACKET_KEY[i % sizeof(RADIO_PACKET_KEY)];
-    }
 }
