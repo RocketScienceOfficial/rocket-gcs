@@ -1,7 +1,10 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include <Arduino.h>
+
+#define RAD_2_DEG(x) ((x) * 180.0 / PI)
+#define DEG_2_RAD(x) ((x) * PI / 180.0)
+#define EARTH_RADIUS 6371000.0
 
 typedef struct vec3
 {
@@ -9,6 +12,4 @@ typedef struct vec3
 } vec3_t;
 
 float CalculateGeoDistance(float lat1, float lon1, float lat2, float lon2);
-float CalulateGeoBearing(float lat1, float lon1, float lat2, float lon2);
-
-uint16_t crc16_mcrf4xx_calculate(const uint8_t *data, size_t length);
+uint16_t CalculateCRC16_MCRF4XX(const uint8_t *data, size_t length);

@@ -14,4 +14,4 @@ struct PMUData
 
 void PMUInit();
 void PMURead();
-PMUData PMUGetCurrentData();
+const PMUData &PMUGetCurrentData();

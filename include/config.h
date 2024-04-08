@@ -1,6 +1,6 @@
 #pragma once
 
-#define OLED_UPDATE_INTERVAL 200
+#define OLED_UPDATE_INTERVAL 1000
 #define OLED_SDA_PIN 21
 #define OLED_SCL_PIN 22
 
@@ -18,4 +18,4 @@
 
 #define BUTTON_PIN 38
 
-#define PMU_IRQ 35
+#define PMU_UPDATE_INTERVAL 1000

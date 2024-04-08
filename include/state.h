@@ -4,8 +4,8 @@
 
 enum class SystemState
 {
-    DASHBOARD,
-    NAVIGATION,
+    GCS,
+    ROCKET,
 };
 
 void StateInit();

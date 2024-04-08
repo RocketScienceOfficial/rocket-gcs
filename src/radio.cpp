@@ -50,7 +50,16 @@ void LoRaCheck()
 
         while (LoRa.available())
         {
-            buffer[i++] = (uint8_t)LoRa.read();
+            if (i < sizeof(buffer))
+            {
+                buffer[i++] = (uint8_t)LoRa.read();
+            }
+            else
+            {
+                Serial.println("Buffer overflow while parsing packet!");
+
+                return;
+            }
         }
 
         s_Rssi = LoRa.packetRssi();

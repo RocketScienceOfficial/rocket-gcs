@@ -6,13 +6,8 @@
 
 static PMUData s_CurrentData;
 static XPowersLibInterface *s_PMU;
-static bool s_PMUInterrupt;
 
-static void __SetPmuFlag()
-{
-    s_PMUInterrupt = true;
-}
-
+// REF: https://github.com/Xinyuan-LilyGO/LilyGo-LoRa-Series/blob/master/examples/PMU/boards.h
 void PMUInit()
 {
     if (!s_PMU)
@@ -38,8 +33,7 @@ void PMUInit()
         return;
     }
 
-    pinMode(PMU_IRQ, INPUT_PULLUP);
-    attachInterrupt(PMU_IRQ, __SetPmuFlag, FALLING);
+    s_PMU->setChargingLedMode(XPOWERS_CHG_LED_BLINK_1HZ);
 
     s_PMU->disablePowerOutput(XPOWERS_DCDC2);
     s_PMU->disablePowerOutput(XPOWERS_DCDC3);
@@ -84,10 +78,10 @@ void PMURead()
     s_CurrentData.batteryVoltage = s_PMU->getBattVoltage() / 1000.0f;
     s_CurrentData.VBusVoltage = s_PMU->getVbusVoltage() / 1000.0f;
     s_CurrentData.systemVoltage = s_PMU->getSystemVoltage() / 1000.0f;
-    s_CurrentData.batteryPercentage = s_CurrentData.isBatteryConnected ? s_PMU->getBatteryPercent() : -1;
+    s_CurrentData.batteryPercentage = s_CurrentData.isBatteryConnected ? s_PMU->getBatteryPercent() : 0;
 }
 
-PMUData PMUGetCurrentData()
+const PMUData &PMUGetCurrentData()
 {
     return s_CurrentData;
 }

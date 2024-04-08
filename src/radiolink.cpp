@@ -11,7 +11,7 @@ void radiolink_serialize_sensor_frame(radiolink_frame_t *rlFrame, radiolink_sens
 
     memcpy(rlFrame->payload, frame, rlFrame->len);
 
-    rlFrame->checksum = crc16_mcrf4xx_calculate((uint8_t *)rlFrame, 3 * sizeof(uint8_t) + rlFrame->len);
+    rlFrame->checksum = CalculateCRC16_MCRF4XX((uint8_t *)rlFrame, 3 * sizeof(uint8_t) + rlFrame->len);
 }
 
 bool radiolink_get_bytes(radiolink_frame_t *frame, uint8_t *data, size_t *len)
@@ -77,7 +77,7 @@ bool radiolink_deserialize(radiolink_frame_t *frame, const uint8_t *data, size_t
 
     memcpy(&frame->checksum, data + offset + frame->len, sizeof(frame->checksum));
 
-    uint16_t checksum = crc16_mcrf4xx_calculate((uint8_t *)frame, 3 * sizeof(uint8_t) + frame->len);
+    uint16_t checksum = CalculateCRC16_MCRF4XX((uint8_t *)frame, 3 * sizeof(uint8_t) + frame->len);
 
     if (frame->checksum != checksum)
     {

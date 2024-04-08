@@ -1,39 +1,23 @@
 #include "maths.h"
-#include <Arduino.h>
 
 float CalculateGeoDistance(float lat1, float lon1, float lat2, float lon2)
 {
-    float rlat1 = 3.14f * lat1 / 180.0f;
-    float rlat2 = 3.14f * lat2 / 180.0f;
-    float theta = lon1 - lon2;
-    float rtheta = 3.14f * theta / 180.0f;
+    lat1 = DEG_2_RAD(lat1);
+    lat2 = DEG_2_RAD(lat2);
 
-    float dist = sin(rlat1) * sin(rlat2) + cos(rlat1) * cos(rlat2) * cos(rtheta);
+    double d_lat = lat2 - lat1;
+    double d_lon = DEG_2_RAD(lon2 - lon1);
 
-    dist = acos(dist);
-    dist = dist * 180.0f / 3.14f;
-    dist = dist * 60.0f * 1.1515f;
-    dist = dist * 1.609344f;
+    double sin_d_lat_2 = sin(d_lat / 2.0);
+    double sin_d_lon_2 = sin(d_lon / 2.0);
 
-    return dist;
+    double a = sin_d_lat_2 * sin_d_lat_2 + sin_d_lon_2 * sin_d_lon_2 * cos(lat1) * cos(lat2);
+    double c = 2 * atan2(sqrt(a), sqrt(1.0 - a));
+
+    return (float)c * EARTH_RADIUS;
 }
 
-float CalulateGeoBearing(float lat1, float lon1, float lat2, float lon2)
-{
-    float dy = lat2 - lat1;
-    float dx = cosf(M_PI / 180.0f * lat1) * (lon2 - lon1);
-    float angle = atan2f(dy, dx);
-
-    angle = angle * 180.0f / 3.14f;
-    angle = angle - 90.0f;
-
-    if (angle > 180.0f)
-        angle = angle - 360.0f;
-
-    return angle;
-}
-
-uint16_t crc16_mcrf4xx_calculate(const uint8_t *data, size_t length)
+uint16_t CalculateCRC16_MCRF4XX(const uint8_t *data, size_t length)
 {
     uint16_t crc = 0xFFFF;
     uint8_t t;

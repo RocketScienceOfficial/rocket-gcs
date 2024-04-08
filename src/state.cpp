@@ -11,6 +11,8 @@ static bool s_Initialized = false;
 void StateInit()
 {
     pinMode(BUTTON_PIN, INPUT);
+
+    Serial.println("Initialized state!");
 }
 
 void StateCheck()
@@ -34,6 +36,8 @@ void StateCheck()
             {
                 s_CurrentStateIndex = 0;
             }
+
+            Serial.println("State changed");
 
             s_ButtonPressed = true;
         }

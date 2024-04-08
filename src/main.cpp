@@ -8,20 +8,20 @@
 #include "measurements.h"
 #include "power.h"
 
-static unsigned long s_LastUpdate;
+static unsigned long s_PMULastUpdate;
+static unsigned long s_OLEDLastUpdate;
 static unsigned long s_Now;
-
-static void UpdateScreen();
+static bool s_FirstUpdate;
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Initialized Board!");
 
-  GPSInit();
-  LoRaInit();
   OLEDInit();
   StateInit();
+  GPSInit();
+  LoRaInit();
   PMUInit();
 
   delay(1000);
@@ -29,36 +29,38 @@ void setup()
 
 void loop()
 {
+  StateCheck();
   GPSCheck();
   LoRaCheck();
-  StateCheck();
-  PMURead();
 
   s_Now = millis();
 
-  if (s_Now - s_LastUpdate >= OLED_UPDATE_INTERVAL || StateChanged())
+  if (s_Now - s_PMULastUpdate >= PMU_UPDATE_INTERVAL || s_FirstUpdate)
   {
-    s_LastUpdate = s_Now;
+    s_PMULastUpdate = s_Now;
 
-    UpdateScreen();
+    PMURead();
   }
-}
 
-static void UpdateScreen()
-{
-  OLEDInputData data = {
-      .rssi = LoRaGetRssi(),
-      .rx = LoRaGetRX(),
-      .tx = LoRaGetTX(),
-      .batteryVoltage = PMUGetCurrentData().batteryVoltage,
-      .batteryPercentage = PMUGetCurrentData().batteryPercentage,
-      .lat = GPSGetLatitude(),
-      .lon = GPSGetLongitude(),
-      .alt = GPSGetAltitude(),
-      .targetLat = GetCurrentMeasurement().latitude,
-      .targetLon = GetCurrentMeasurement().longitude,
-      .targetAlt = GetCurrentMeasurement().altitude,
-  };
+  if (s_Now - s_OLEDLastUpdate >= OLED_UPDATE_INTERVAL || StateChanged() || s_FirstUpdate)
+  {
+    s_OLEDLastUpdate = s_Now;
 
-  OLEDUpdateScreen(data);
+    OLEDInputData data = {
+        .rssi = LoRaGetRssi(),
+        .rx = LoRaGetRX(),
+        .tx = LoRaGetTX(),
+        .batteryVoltage = PMUGetCurrentData().batteryVoltage,
+        .batteryPercentage = PMUGetCurrentData().batteryPercentage,
+        .lat = GPSGetLatitude(),
+        .lon = GPSGetLongitude(),
+        .alt = GPSGetAltitude(),
+        .targetLat = GetCurrentMeasurement().latitude,
+        .targetLon = GetCurrentMeasurement().longitude,
+        .targetAlt = GetCurrentMeasurement().altitude,
+    };
+    OLEDUpdateScreen(data);
+  }
+
+  s_FirstUpdate = true;
 }
