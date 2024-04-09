@@ -96,8 +96,9 @@ static const uint8_t LOGO_XMB[] PROGMEM = {
 static char s_Buffer[128];
 static SSD1306Wire s_Display(0x3C, OLED_SDA_PIN, OLED_SCL_PIN);
 
+static float _GetRSSIPercentage(float rssi);
 static void _OLEDDrawProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress);
-static void _OLEDDrawBatteryIndicator(uint16_t x, uint16_t y, uint16_t width, uint16_t height, int percentage);
+static void _OLEDDrawBatteryIndicator(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t percentage);
 
 void OLEDInit()
 {
@@ -116,72 +117,49 @@ void OLEDUpdateScreen(const OLEDInputData &data)
 {
     s_Display.clear();
 
-    _OLEDDrawProgressBar(0, 0, 72, 9, (uint8_t)(100.0f * (data.rssi + 164.0f) / 164.0f));
-    _OLEDDrawBatteryIndicator(110, 36, 30, 15, data.batteryPercentage);
-
-    s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
-    s_Display.drawStringf(90, 0, s_Buffer, "%d", data.rssi);
-    s_Display.drawStringf(127, 0, s_Buffer, "%d %%", data.batteryPercentage);
-    s_Display.drawStringf(127, 13, s_Buffer, "%.2f V", data.batteryVoltage);
-
     s_Display.setTextAlignment(TEXT_ALIGN_LEFT);
+
+    if (data.rssi < 0)
+    {
+        _OLEDDrawProgressBar(0, 2, 45, 6, (uint8_t)_GetRSSIPercentage(data.rssi));
+
+        s_Display.drawStringf(51, 0, s_Buffer, "%d", data.rssi);
+    }
+    else
+    {
+        s_Display.drawStringf(0, 0, s_Buffer, "NO SIGNAL");
+    }
+
     s_Display.drawStringf(0, 13, s_Buffer, "RX: %d", data.rx);
-    s_Display.drawStringf(40, 13, s_Buffer, "TX: %d", data.tx);
+    s_Display.drawStringf(45, 13, s_Buffer, "TX: %d", data.tx);
 
     s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
+    s_Display.drawStringf(0, 42, s_Buffer, "%c%.7f", ' ', StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
+    s_Display.drawStringf(0, 52, s_Buffer, "%c%.7f", ' ', StateGetCurrent() == SystemState::GCS ? data.lon : data.targetLon);
 
-    switch (StateGetCurrent())
-    {
-    case SystemState::GCS:
-        s_Display.drawStringf(0, 42, s_Buffer, "%c%.7f", ' ', data.lat);
-        s_Display.drawStringf(0, 52, s_Buffer, "%c%.7f", ' ', data.lon);
+    _OLEDDrawBatteryIndicator(110, 41, 30, 15, StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
 
-        s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
-        s_Display.drawStringf(127, 52, s_Buffer, "GCS");
-
-        break;
-    case SystemState::ROCKET:
-        s_Display.drawStringf(0, 42, s_Buffer, "%c%.7f", ' ', data.targetLat);
-        s_Display.drawStringf(0, 52, s_Buffer, "%c%.7f", ' ', data.targetLon);
-
-        s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
-        s_Display.drawStringf(127, 52, s_Buffer, "ROCKET");
-
-        break;
-    default:
-        break;
-    }
+    s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
+    s_Display.drawStringf(127, 0, s_Buffer, StateGetCurrent() == SystemState::GCS ? "GCS" : "ROCKET");
+    s_Display.drawStringf(127, 18, s_Buffer, "%d %%", StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
+    s_Display.drawStringf(127, 53, s_Buffer, "%.2f V", StateGetCurrent() == SystemState::GCS ? data.batteryVoltage : data.targetBatteryVoltage);
 
     s_Display.display();
 }
 
-void _OLEDDrawProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress)
+static float _GetRSSIPercentage(float rssi)
 {
-    uint16_t radius = height / 2;
-    uint16_t xRadius = x + radius;
-    uint16_t yRadius = y + radius;
-    uint16_t doubleRadius = 2 * radius;
-    uint16_t innerRadius = radius - 2;
-    uint16_t maxProgressWidth = (width - doubleRadius + 1) * progress / 100;
+    const float y_a = 0.0f, y_b = 100.0f, x_a = -130.0f, x_b = -50.0f;
 
-    s_Display.setColor(WHITE);
-    s_Display.fillRect(x, y, maxProgressWidth, height);
-    s_Display.drawHorizontalLine(x, y + radius, width);
-
-    s_Display.setColor(BLACK);
-
-    for (uint8_t i = 0; (i * 8) < width; i++)
-    {
-        s_Display.drawLine(x + 8 * i, y, x + 8 * i + 4, y + radius);
-        s_Display.drawLine(x + 8 * i, y + height - 1, x + 8 * i + 4, y + radius);
-        s_Display.drawLine(x + 8 * i + 1, y, x + 8 * i + 4 + 1, y + radius);
-        s_Display.drawLine(x + 8 * i + 1, y + height - 1, x + 8 * i + 4 + 1, y + radius);
-    }
-
-    s_Display.setColor(WHITE);
+    return constrain((y_b - y_a) / (x_b - x_a) * (rssi - x_a) + y_a, y_a, y_b);
 }
 
-void _OLEDDrawBatteryIndicator(uint16_t x, uint16_t y, uint16_t width, uint16_t height, int percentage)
+void _OLEDDrawProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress)
+{
+    s_Display.fillRect(x, y, width * (float)progress / 100.0f, height);
+}
+
+void _OLEDDrawBatteryIndicator(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t percentage)
 {
     const uint8_t MAX_STEPS_COUNT = 4;
     const uint16_t TOTAL_STEP_WIDTH = width / MAX_STEPS_COUNT;
