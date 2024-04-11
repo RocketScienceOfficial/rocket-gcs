@@ -11,11 +11,11 @@ struct OLEDInputData
     int batteryPercentage;
     float targetBatteryVoltage;
     int targetBatteryPercentage;
-    float lat;
-    float lon;
+    double lat;
+    double lon;
     float alt;
-    float targetLat;
-    float targetLon;
+    double targetLat;
+    double targetLon;
     float targetAlt;
 };
 

@@ -2,6 +2,6 @@
 
 void GPSInit();
 void GPSCheck();
-float GPSGetLatitude();
-float GPSGetLongitude();
+double GPSGetLatitude();
+double GPSGetLongitude();
 float GPSGetAltitude();

@@ -7,6 +7,7 @@
 #define GPS_RX_PIN 12
 #define GPS_TX_PIN 34
 
+#define LORA_TEST 0
 #define LORA_FREQ 433E6
 #define LORA_BANDWIDTH 125E3
 #define LORA_SCLK_PIN 5

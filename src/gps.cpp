@@ -7,8 +7,8 @@
 static SFE_UBLOX_GNSS s_GNSS;
 static char s_NMEABuffer[100];
 static MicroNMEA s_NMEA(s_NMEABuffer, sizeof(s_NMEABuffer));
-static float s_Latitude;
-static float s_Longitude;
+static double s_Latitude;
+static double s_Longitude;
 static float s_Altitude;
 
 void GPSInit()
@@ -39,8 +39,8 @@ void GPSCheck()
             long lon = s_NMEA.getLongitude();
             long alt = 0;
 
-            s_Latitude = lat / 1000000.0f;
-            s_Longitude = lon / 1000000.0f;
+            s_Latitude = lat / 1000000.0;
+            s_Longitude = lon / 1000000.0;
 
             s_NMEA.getAltitude(alt);
 
@@ -51,12 +51,12 @@ void GPSCheck()
     }
 }
 
-float GPSGetLatitude()
+double GPSGetLatitude()
 {
     return s_Latitude;
 }
 
-float GPSGetLongitude()
+double GPSGetLongitude()
 {
     return s_Longitude;
 }

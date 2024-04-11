@@ -2,16 +2,22 @@
 
 struct MeasurementData
 {
-    float pos_x;
-    float pos_y;
-    float pos_z;
+    float positionX;
+    float positionY;
+    float positionZ;
     float roll;
     float pitch;
     float yaw;
-    float latitude;
-    float longitude;
+    double latitude;
+    double longitude;
     float altitude;
     float velocity;
+    float batteryVoltage;
+    int batteryPercentage;
+    float pressure;
+    float temperature;
+    int signalStrength;
+    int packetLoss;
 };
 
 void SetMeasurementData(MeasurementData *data);

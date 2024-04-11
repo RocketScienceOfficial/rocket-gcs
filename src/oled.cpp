@@ -134,8 +134,8 @@ void OLEDUpdateScreen(const OLEDInputData &data)
     s_Display.drawStringf(45, 13, s_Buffer, "TX: %d", data.tx);
 
     s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
-    s_Display.drawStringf(0, 42, s_Buffer, "%c%.7f", ' ', StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
-    s_Display.drawStringf(0, 52, s_Buffer, "%c%.7f", ' ', StateGetCurrent() == SystemState::GCS ? data.lon : data.targetLon);
+    s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
+    s_Display.drawStringf(0, 52, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lon : data.targetLon);
 
     _OLEDDrawBatteryIndicator(110, 41, 30, 15, StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
 
