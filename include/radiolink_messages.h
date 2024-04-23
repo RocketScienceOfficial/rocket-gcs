@@ -6,6 +6,7 @@
  */
 
 #include "maths.h"
+#include <Arduino.h>
 
 /**
  * @brief List of available RadioLink messsages types
@@ -28,7 +29,7 @@ typedef struct radiolink_sensor_frame
     float velocity;
     float batteryVoltage;
     uint8_t batteryPercentage;
-    float pressure;
+    int pressure;
     float temperature;
 } radiolink_sensor_frame_t;
 
