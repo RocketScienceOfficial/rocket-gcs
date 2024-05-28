@@ -1,10 +1,28 @@
 #include "radio.h"
-#include "radiolink.h"
 #include "config.h"
 #include "measurements.h"
+#include "maths.h"
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
+
+#define RADIO_MAGIC 0x7B
+
+typedef struct radio_frame
+{
+    uint8_t magic;
+    uint8_t roll;
+    uint8_t pitch;
+    uint8_t yaw;
+    uint16_t velocity;
+    uint8_t batteryVoltage10;
+    uint8_t batteryPercentage;
+    double lat;
+    double lon;
+    float alt;
+    uint8_t seq;
+    uint16_t crc;
+} radio_frame_t;
 
 static int s_Rssi;
 static int s_RX;
@@ -12,8 +30,8 @@ static int s_TX;
 static uint8_t s_CurrentSeq;
 static int s_PacketsLost;
 
-static void TryRunTest();
 static void TryParsePacket(uint8_t *buffer, size_t len);
+static bool ValidatePacket(const radio_frame_t *packet);
 
 void LoRaInit()
 {
@@ -32,8 +50,6 @@ void LoRaInit()
         while (1)
             ;
     }
-
-    LoRa.setSignalBandwidth(LORA_BANDWIDTH);
 
     LoRa.receive();
 
@@ -58,6 +74,8 @@ void LoRaCheck()
             if (i < sizeof(buffer))
             {
                 buffer[i++] = (uint8_t)LoRa.read();
+
+                Serial.printf("%c\n", buffer[i - 1]);
             }
             else
             {
@@ -69,8 +87,6 @@ void LoRaCheck()
 
         TryParsePacket(buffer, i);
     }
-
-    TryRunTest();
 }
 
 int LoRaGetRssi()
@@ -88,46 +104,18 @@ int LoRaGetTX()
     return s_TX;
 }
 
-static void TryRunTest()
-{
-    if (LORA_TEST)
-    {
-        static unsigned long timer;
-        static uint8_t sequence;
-
-        if (millis() - timer >= 2000)
-        {
-            timer = millis();
-
-            radiolink_sensor_frame_t sens = {
-                .pos = {0},
-                .gyro = {60, 50, 0},
-                .lat = 51.5287398,
-                .lon = -0.2664034,
-                .alt = 100.0f,
-                .velocity = 50.0f,
-                .batteryVoltage = 9.3f,
-                .batteryPercentage = 87,
-                .pressure = 99900.0f,
-                .temperature = 290.0f,
-            };
-            radiolink_frame_t frame;
-            radiolink_serialize_sensor_frame(&frame, &sequence, &sens);
-
-            uint8_t buff[512];
-            size_t len = sizeof(buff);
-            radiolink_get_bytes(&frame, buff, &len);
-
-            TryParsePacket(buff, len);
-        }
-    }
-}
-
 static void TryParsePacket(uint8_t *buffer, size_t len)
 {
-    radiolink_frame_t frame = {0};
+    if (len != sizeof(radio_frame_t))
+    {
+        Serial.println("Invalid packet length!");
 
-    if (!radiolink_deserialize(&frame, buffer, len))
+        return;
+    }
+
+    radio_frame_t *frame = (radio_frame_t *)buffer;
+
+    if (!ValidatePacket(frame))
     {
         Serial.println("Couldn't deserialize packet!");
 
@@ -137,10 +125,10 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
     s_Rssi = LoRa.packetRssi();
     s_RX++;
 
-    if (frame.seq != s_CurrentSeq)
+    if (frame->seq != s_CurrentSeq)
     {
-        s_PacketsLost += frame.seq > s_CurrentSeq ? frame.seq - s_CurrentSeq : 256 + frame.seq - s_CurrentSeq;
-        s_CurrentSeq = frame.seq + 1;
+        s_PacketsLost += frame->seq > s_CurrentSeq ? frame->seq - s_CurrentSeq : 256 + frame->seq - s_CurrentSeq;
+        s_CurrentSeq = frame->seq + 1;
     }
     else if (s_CurrentSeq == 255)
     {
@@ -151,26 +139,63 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         s_CurrentSeq++;
     }
 
-    radiolink_sensor_frame_t *newFrame = (radiolink_sensor_frame_t *)frame.payload;
-
     MeasurementData measurement = {
-        .positionX = newFrame->pos.x,
-        .positionY = newFrame->pos.y,
-        .positionZ = newFrame->pos.z,
-        .roll = newFrame->gyro.x,
-        .pitch = newFrame->gyro.y,
-        .yaw = newFrame->gyro.z,
-        .latitude = newFrame->lat,
-        .longitude = newFrame->lon,
-        .altitude = newFrame->alt,
-        .velocity = newFrame->velocity,
-        .batteryVoltage = newFrame->batteryVoltage,
-        .batteryPercentage = newFrame->batteryPercentage,
-        .pressure = newFrame->pressure,
-        .temperature = newFrame->temperature,
+        .roll = (float)frame->roll,
+        .pitch = (float)frame->pitch,
+        .yaw = (float)frame->yaw,
+        .velocity = (float)frame->velocity,
+        .batteryVoltage = frame->batteryVoltage10 / 10.0f,
+        .batteryPercentage = frame->batteryPercentage,
+        .latitude = frame->lat,
+        .longitude = frame->lon,
+        .altitude = frame->alt,
         .signalStrength = s_Rssi,
         .packetLoss = (int)((float)s_PacketsLost / s_RX * 100),
     };
 
     SetMeasurementData(&measurement);
 }
+
+static bool ValidatePacket(const radio_frame_t *packet)
+{
+    if (packet->magic != RADIO_MAGIC)
+    {
+        return false;
+    }
+
+    uint16_t crc = CalculateCRC16_MCRF4XX((const uint8_t *)packet, sizeof(radio_frame_t) - 2);
+
+    return crc == packet->crc;
+}
+
+// static void TryRunTest()
+// {
+//     static unsigned long timer;
+//     static uint8_t sequence;
+
+//     if (millis() - timer >= 2000)
+//     {
+//         timer = millis();
+
+//         radiolink_sensor_frame_t sens = {
+//             .pos = {0},
+//             .gyro = {60, 50, 0},
+//             .lat = 51.5287398,
+//             .lon = -0.2664034,
+//             .alt = 100.0f,
+//             .velocity = 50.0f,
+//             .batteryVoltage = 9.3f,
+//             .batteryPercentage = 87,
+//             .pressure = 99900,
+//             .temperature = 290.0f,
+//         };
+//         radiolink_frame_t frame;
+//         radiolink_serialize_sensor_frame(&frame, &sequence, &sens);
+
+//         uint8_t buff[512];
+//         size_t len = sizeof(buff);
+//         radiolink_get_bytes(&frame, buff, &len);
+
+//         TryParsePacket(buff, len);
+//     }
+// }

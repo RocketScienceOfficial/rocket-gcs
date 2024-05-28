@@ -2,20 +2,15 @@
 
 struct MeasurementData
 {
-    float positionX;
-    float positionY;
-    float positionZ;
     float roll;
     float pitch;
     float yaw;
-    double latitude;
-    double longitude;
-    float altitude;
     float velocity;
     float batteryVoltage;
     int batteryPercentage;
-    float pressure;
-    float temperature;
+    double latitude;
+    double longitude;
+    float altitude;
     int signalStrength;
     int packetLoss;
 };
