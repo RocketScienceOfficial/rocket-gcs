@@ -51,6 +51,15 @@ void LoRaInit()
             ;
     }
 
+    LoRa.setFrequency(433000000);
+    LoRa.setSignalBandwidth(125000);
+    LoRa.setSpreadingFactor(8);
+    LoRa.setCodingRate4(5);
+    LoRa.setSyncWord(0x14);
+    LoRa.setTxPower(10);
+    LoRa.setPreambleLength(15);
+    LoRa.setGain(0);
+    LoRa.enableCrc();
     LoRa.receive();
 
     Serial.println("Starting LoRa success!");
