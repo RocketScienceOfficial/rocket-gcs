@@ -20,6 +20,7 @@ typedef struct radio_frame
     double lat;
     double lon;
     float alt;
+    uint8_t state;
     uint8_t seq;
     uint16_t crc;
 } radio_frame_t;
@@ -51,15 +52,9 @@ void LoRaInit()
             ;
     }
 
-    LoRa.setFrequency(433000000);
-    LoRa.setSignalBandwidth(125000);
+    LoRa.setFrequency(LORA_FREQ);
+    LoRa.setSignalBandwidth(LORA_BAND);
     LoRa.setSpreadingFactor(8);
-    LoRa.setCodingRate4(5);
-    LoRa.setSyncWord(0x14);
-    LoRa.setTxPower(10);
-    LoRa.setPreambleLength(15);
-    LoRa.setGain(0);
-    LoRa.enableCrc();
     LoRa.receive();
 
     Serial.println("Starting LoRa success!");
@@ -158,6 +153,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .latitude = frame->lat,
         .longitude = frame->lon,
         .altitude = frame->alt,
+        .state = (int)frame->state,
         .signalStrength = s_Rssi,
         .packetLoss = (int)((float)s_PacketsLost / s_RX * 100),
     };

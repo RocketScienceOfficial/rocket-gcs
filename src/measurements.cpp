@@ -15,6 +15,7 @@ void SetMeasurementData(MeasurementData *data)
     Serial.printf("%.7f,", data->latitude);
     Serial.printf("%.7f,", data->longitude);
     Serial.printf("%.2f,", data->altitude);
+    Serial.printf("%d,", data->state);
     Serial.printf("%d,", data->signalStrength);
     Serial.printf("%d,", data->packetLoss);
     Serial.println("*/");

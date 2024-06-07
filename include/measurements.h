@@ -11,6 +11,7 @@ struct MeasurementData
     double latitude;
     double longitude;
     float altitude;
+    int state;
     int signalStrength;
     int packetLoss;
 };
