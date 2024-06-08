@@ -8,7 +8,7 @@
 
 #define RADIO_MAGIC 0x7B
 
-typedef struct radio_frame
+typedef struct __attribute__((__packed__)) radio_frame
 {
     uint8_t magic;
     uint8_t roll;
@@ -19,7 +19,7 @@ typedef struct radio_frame
     uint8_t batteryPercentage;
     double lat;
     double lon;
-    float alt;
+    double alt;
     uint8_t state;
     uint8_t seq;
     uint16_t crc;
@@ -78,8 +78,6 @@ void LoRaCheck()
             if (i < sizeof(buffer))
             {
                 buffer[i++] = (uint8_t)LoRa.read();
-
-                Serial.printf("%c\n", buffer[i - 1]);
             }
             else
             {
@@ -152,7 +150,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .batteryPercentage = frame->batteryPercentage,
         .latitude = frame->lat,
         .longitude = frame->lon,
-        .altitude = frame->alt,
+        .altitude = (float)frame->alt,
         .state = (int)frame->state,
         .signalStrength = s_Rssi,
         .packetLoss = (int)((float)s_PacketsLost / s_RX * 100),
