@@ -10,7 +10,7 @@ struct MeasurementData
     int batteryPercentage;
     double latitude;
     double longitude;
-    float altitude;
+    int altitude;
     int state;
     int signalStrength;
     int packetLoss;

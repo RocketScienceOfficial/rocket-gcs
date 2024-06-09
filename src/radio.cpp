@@ -19,7 +19,7 @@ typedef struct __attribute__((__packed__)) radio_frame
     uint8_t batteryPercentage;
     double lat;
     double lon;
-    double alt;
+    uint16_t alt;
     uint8_t state;
     uint8_t seq;
     uint16_t crc;
@@ -150,7 +150,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .batteryPercentage = frame->batteryPercentage,
         .latitude = frame->lat,
         .longitude = frame->lon,
-        .altitude = (float)frame->alt,
+        .altitude = (int)frame->alt,
         .state = (int)frame->state,
         .signalStrength = s_Rssi,
         .packetLoss = (int)((float)s_PacketsLost / s_RX * 100),
