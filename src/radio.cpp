@@ -75,6 +75,13 @@ void LoRaCheck()
 
         while (LoRa.available())
         {
+            if (i == packetSize)
+            {
+                Serial.println("Something went wrong parsing packet!");
+
+                return;
+            }
+
             if (i < sizeof(buffer))
             {
                 buffer[i++] = (uint8_t)LoRa.read();
