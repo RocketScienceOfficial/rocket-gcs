@@ -59,7 +59,7 @@ void loop()
         .alt = GPSGetAltitude(),
         .targetLat = GetCurrentMeasurement().latitude,
         .targetLon = GetCurrentMeasurement().longitude,
-        .targetAlt = GetCurrentMeasurement().altitude,
+        .targetAlt = (float)GetCurrentMeasurement().altitude,
     };
     OLEDUpdateScreen(data);
   }
