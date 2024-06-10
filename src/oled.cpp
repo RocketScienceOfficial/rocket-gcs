@@ -131,7 +131,7 @@ void OLEDUpdateScreen(const OLEDInputData &data)
     }
 
     s_Display.drawStringf(0, 13, s_Buffer, "RX: %d", data.rx);
-    s_Display.drawStringf(45, 13, s_Buffer, "TX: %d", data.tx);
+    s_Display.drawStringf(60, 13, s_Buffer, "TX: %d", data.tx);
 
     s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
     s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
@@ -149,7 +149,7 @@ void OLEDUpdateScreen(const OLEDInputData &data)
 
 static float _GetRSSIPercentage(float rssi)
 {
-    const float y_a = 0.0f, y_b = 100.0f, x_a = -130.0f, x_b = -50.0f;
+    const float y_a = 0.0f, y_b = 100.0f, x_a = -130.0f, x_b = -10.0f;
 
     return constrain((y_b - y_a) / (x_b - x_a) * (rssi - x_a) + y_a, y_a, y_b);
 }
