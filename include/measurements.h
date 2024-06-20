@@ -16,5 +16,6 @@ struct MeasurementData
     int packetLoss;
 };
 
+void MeasInit();
 void SetMeasurementData(MeasurementData *data);
 MeasurementData GetCurrentMeasurement();

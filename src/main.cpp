@@ -18,6 +18,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("Initialized Board!");
 
+  MeasInit();
   OLEDInit();
   StateInit();
   GPSInit();

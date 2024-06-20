@@ -1,24 +1,32 @@
 #include "measurements.h"
+#include "config.h"
 #include <Arduino.h>
+#include <BluetoothSerial.h>
 
+static BluetoothSerial SerialBT;
 static MeasurementData s_CurrentMeasurement;
+
+void MeasInit()
+{
+    SerialBT.begin(BT_NAME);
+}
 
 void SetMeasurementData(MeasurementData *data)
 {
-    Serial.print("/*");
-    Serial.printf("%.1f,", data->roll);
-    Serial.printf("%.1f,", data->pitch);
-    Serial.printf("%.1f,", data->yaw);
-    Serial.printf("%.1f,", data->velocity);
-    Serial.printf("%.1f,", data->batteryVoltage);
-    Serial.printf("%d,", data->batteryPercentage);
-    Serial.printf("%.7f,", data->latitude);
-    Serial.printf("%.7f,", data->longitude);
-    Serial.printf("%d,", data->altitude);
-    Serial.printf("%d,", data->state);
-    Serial.printf("%d,", data->signalStrength);
-    Serial.printf("%d,", data->packetLoss);
-    Serial.println("*/");
+    SerialBT.print("/*");
+    SerialBT.printf("%.1f,", data->roll);
+    SerialBT.printf("%.1f,", data->pitch);
+    SerialBT.printf("%.1f,", data->yaw);
+    SerialBT.printf("%.1f,", data->velocity);
+    SerialBT.printf("%.1f,", data->batteryVoltage);
+    SerialBT.printf("%d,", data->batteryPercentage);
+    SerialBT.printf("%.7f,", data->latitude);
+    SerialBT.printf("%.7f,", data->longitude);
+    SerialBT.printf("%d,", data->altitude);
+    SerialBT.printf("%d,", data->state);
+    SerialBT.printf("%d,", data->signalStrength);
+    SerialBT.printf("%d,", data->packetLoss);
+    SerialBT.println("*/");
 
     s_CurrentMeasurement = *data;
 }
