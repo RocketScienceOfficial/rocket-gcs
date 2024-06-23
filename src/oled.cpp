@@ -5,6 +5,8 @@
 #include <Wire.h>
 #include <SSD1306Wire.h>
 
+#define SIGNAL_LOST_TIMEOUT_MS 1000
+
 static const uint8_t LOGO_XMB[] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -95,6 +97,8 @@ static const uint8_t LOGO_XMB[] PROGMEM = {
 
 static char s_Buffer[128];
 static SSD1306Wire s_Display(0x3C, OLED_SDA_PIN, OLED_SCL_PIN);
+static int s_LastRX;
+static unsigned long s_LastUpdateTime;
 
 static float _GetRSSIPercentage(float rssi);
 static void _OLEDDrawProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress);
@@ -119,7 +123,14 @@ void OLEDUpdateScreen(const OLEDInputData &data)
 
     s_Display.setTextAlignment(TEXT_ALIGN_LEFT);
 
-    if (data.rssi < 0)
+    if (data.rx != s_LastRX)
+    {
+        s_LastUpdateTime = millis();
+    }
+
+    s_LastRX = data.rx;
+
+    if (data.rssi < 0 && millis() - s_LastUpdateTime < SIGNAL_LOST_TIMEOUT_MS)
     {
         _OLEDDrawProgressBar(0, 2, 45, 6, (uint8_t)_GetRSSIPercentage(data.rssi));
 
