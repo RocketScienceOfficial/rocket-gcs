@@ -258,5 +258,7 @@ static void SendTLMPacket()
 
     memset(&s_CurrentTLMData, 0, sizeof(s_CurrentTLMData));
 
+    s_TX++;
+
     Serial.printf("Successfully sent %f bytes\n", size);
 }
