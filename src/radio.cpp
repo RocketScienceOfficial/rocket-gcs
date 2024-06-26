@@ -29,10 +29,10 @@ typedef struct __attribute__((__packed__)) radio_obc_frame
 
 typedef enum radio_tlm_flags
 {
-    RADIO_TLM_FLAG_ARMED = 1 << 0,
-    RADIO_TLM_FLAG_3V3 = 1 << 1,
-    RADIO_TLM_FLAG_5V = 1 << 2,
-    RADIO_TLM_FLAG_VBAT = 1 << 3,
+    RADIO_TLM_FLAG_ARMED = 0,
+    RADIO_TLM_FLAG_3V3 = 1,
+    RADIO_TLM_FLAG_5V = 2,
+    RADIO_TLM_FLAG_VBAT = 3,
 } radio_tlm_flags_t;
 
 typedef struct __attribute__((__packed__)) radio_tlm_frame
@@ -227,19 +227,19 @@ static void SendTLMPacket()
 
     if (s_CurrentTLMData.armed)
     {
-        frame.flags |= RADIO_TLM_FLAG_ARMED;
+        frame.flags |= 1 << RADIO_TLM_FLAG_ARMED;
     }
     else if (s_CurrentTLMData.v3v3)
     {
-        frame.flags |= RADIO_TLM_FLAG_3V3;
+        frame.flags |= 1 << RADIO_TLM_FLAG_3V3;
     }
     else if (s_CurrentTLMData.v5)
     {
-        frame.flags |= RADIO_TLM_FLAG_5V;
+        frame.flags |= 1 << RADIO_TLM_FLAG_5V;
     }
     else if (s_CurrentTLMData.vbat)
     {
-        frame.flags |= RADIO_TLM_FLAG_VBAT;
+        frame.flags |= 1 << RADIO_TLM_FLAG_VBAT;
     }
 
     frame.crc = CalculateCRC16_MCRF4XX((const uint8_t *)&frame, sizeof(frame) - 2);
