@@ -17,8 +17,8 @@ static BluetoothSerial SerialBT;
 static char s_CMD[128];
 static size_t s_CurrentSize;
 
-static void _SubmitCMD();
-static void _Reset();
+static void SubmitCMD();
+static void Reset();
 
 void RouterInit()
 {
@@ -37,14 +37,14 @@ void RouterUpdate()
         {
             if (s_CurrentSize >= sizeof(s_CMD))
             {
-                _Reset();
+                Reset();
             }
             else
             {
                 s_CMD[s_CurrentSize] = '\0';
 
-                _SubmitCMD();
-                _Reset();
+                SubmitCMD();
+                Reset();
             }
         }
         else
@@ -53,7 +53,7 @@ void RouterUpdate()
             {
                 if (s_CurrentSize >= sizeof(s_CMD))
                 {
-                    _Reset();
+                    Reset();
                 }
                 else
                 {
@@ -85,8 +85,10 @@ void RouterSendData()
     LOGGER.println("*/");
 }
 
-static void _SubmitCMD()
+static void SubmitCMD()
 {
+    Serial.println("Submiting command...");
+
     if (strcmp(s_CMD, "\\arm") == 0)
     {
         LoRaGetCurrentTLMData()->armed = true;
@@ -105,7 +107,7 @@ static void _SubmitCMD()
     }
 }
 
-static void _Reset()
+static void Reset()
 {
     memset(s_CMD, 0, sizeof(s_CMD));
 

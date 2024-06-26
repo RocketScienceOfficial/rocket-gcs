@@ -27,11 +27,18 @@ typedef struct __attribute__((__packed__)) radio_obc_frame
     uint16_t crc;
 } radio_obc_frame_t;
 
+typedef enum radio_tlm_flags
+{
+    RADIO_TLM_FLAG_ARMED = 1 << 0,
+    RADIO_TLM_FLAG_3V3 = 1 << 1,
+    RADIO_TLM_FLAG_5V = 1 << 2,
+    RADIO_TLM_FLAG_VBAT = 1 << 3,
+} radio_tlm_flags_t;
+
 typedef struct __attribute__((__packed__)) radio_tlm_frame
 {
     uint8_t magic;
     uint8_t flags;
-    uint8_t seq;
     uint16_t crc;
 } radio_tlm_frame_t;
 
@@ -46,6 +53,7 @@ static unsigned long s_SendTLMDataTimeOffset;
 
 static void TryParsePacket(uint8_t *buffer, size_t len);
 static bool ValidatePacket(const radio_obc_frame_t *packet);
+static void SendTLMPacket();
 
 void LoRaInit()
 {
@@ -113,6 +121,8 @@ void LoRaCheck()
     if (s_SendTLMDataTimeOffset != 0 && millis() - s_SendTLMDataTimeOffset >= RADIO_TLM_DATA_SEND_DELAY)
     {
         s_SendTLMDataTimeOffset = 0;
+
+        SendTLMPacket();
     }
 }
 
@@ -207,4 +217,46 @@ static bool ValidatePacket(const radio_obc_frame_t *packet)
     uint16_t crc = CalculateCRC16_MCRF4XX((const uint8_t *)packet, sizeof(radio_obc_frame_t) - 2);
 
     return crc == packet->crc;
+}
+
+static void SendTLMPacket()
+{
+    radio_tlm_frame_t frame = {
+        .magic = RADIO_MAGIC,
+    };
+
+    if (s_CurrentTLMData.armed)
+    {
+        frame.flags |= RADIO_TLM_FLAG_ARMED;
+    }
+    else if (s_CurrentTLMData.v3v3)
+    {
+        frame.flags |= RADIO_TLM_FLAG_3V3;
+    }
+    else if (s_CurrentTLMData.v5)
+    {
+        frame.flags |= RADIO_TLM_FLAG_5V;
+    }
+    else if (s_CurrentTLMData.vbat)
+    {
+        frame.flags |= RADIO_TLM_FLAG_VBAT;
+    }
+
+    frame.crc = CalculateCRC16_MCRF4XX((const uint8_t *)&frame, sizeof(frame) - 2);
+
+    const uint8_t *buffer = (const uint8_t *)&frame;
+    size_t size = sizeof(frame);
+
+    LoRa.beginPacket();
+
+    for (size_t i = 0; i < size; i++)
+    {
+        LoRa.write(buffer[i]);
+    }
+
+    LoRa.endPacket();
+
+    memset(&s_CurrentTLMData, 0, sizeof(s_CurrentTLMData));
+
+    Serial.printf("Successfully sent %f bytes\n", size);
 }
