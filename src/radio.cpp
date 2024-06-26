@@ -1,14 +1,15 @@
 #include "radio.h"
 #include "config.h"
-#include "measurements.h"
+#include "router.h"
 #include "maths.h"
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
 
+#define RADIO_TLM_DATA_SEND_DELAY 250
 #define RADIO_MAGIC 0x7B
 
-typedef struct __attribute__((__packed__)) radio_frame
+typedef struct __attribute__((__packed__)) radio_obc_frame
 {
     uint8_t magic;
     uint8_t roll;
@@ -21,18 +22,30 @@ typedef struct __attribute__((__packed__)) radio_frame
     double lon;
     uint16_t alt;
     uint8_t state;
+    uint8_t controlFlags;
     uint8_t seq;
     uint16_t crc;
-} radio_frame_t;
+} radio_obc_frame_t;
 
+typedef struct __attribute__((__packed__)) radio_tlm_frame
+{
+    uint8_t magic;
+    uint8_t flags;
+    uint8_t seq;
+    uint16_t crc;
+} radio_tlm_frame_t;
+
+static RadioOBCData s_CurrentOBCData;
+static RadioTLMData s_CurrentTLMData;
 static int s_Rssi;
 static int s_RX;
 static int s_TX;
 static uint8_t s_CurrentSeq;
 static int s_PacketsLost;
+static unsigned long s_SendTLMDataTimeOffset;
 
 static void TryParsePacket(uint8_t *buffer, size_t len);
-static bool ValidatePacket(const radio_frame_t *packet);
+static bool ValidatePacket(const radio_obc_frame_t *packet);
 
 void LoRaInit()
 {
@@ -77,7 +90,7 @@ void LoRaCheck()
         {
             if (i == packetSize)
             {
-                Serial.println("Something went wrong parsing packet!");
+                Serial.println("Something went wrong while parsing packet!");
 
                 return;
             }
@@ -96,6 +109,11 @@ void LoRaCheck()
 
         TryParsePacket(buffer, i);
     }
+
+    if (s_SendTLMDataTimeOffset != 0 && millis() - s_SendTLMDataTimeOffset >= RADIO_TLM_DATA_SEND_DELAY)
+    {
+        s_SendTLMDataTimeOffset = 0;
+    }
 }
 
 int LoRaGetRssi()
@@ -113,16 +131,26 @@ int LoRaGetTX()
     return s_TX;
 }
 
+RadioOBCData LoRaGetCurrentOBCData()
+{
+    return s_CurrentOBCData;
+}
+
+RadioTLMData *LoRaGetCurrentTLMData()
+{
+    return &s_CurrentTLMData;
+}
+
 static void TryParsePacket(uint8_t *buffer, size_t len)
 {
-    if (len != sizeof(radio_frame_t))
+    if (len != sizeof(radio_obc_frame_t))
     {
         Serial.println("Invalid packet length!");
 
         return;
     }
 
-    radio_frame_t *frame = (radio_frame_t *)buffer;
+    radio_obc_frame_t *frame = (radio_obc_frame_t *)buffer;
 
     if (!ValidatePacket(frame))
     {
@@ -148,7 +176,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         s_CurrentSeq++;
     }
 
-    MeasurementData measurement = {
+    s_CurrentOBCData = {
         .roll = (float)frame->roll,
         .pitch = (float)frame->pitch,
         .yaw = (float)frame->yaw,
@@ -159,53 +187,24 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .longitude = frame->lon,
         .altitude = (int)frame->alt,
         .state = (int)frame->state,
+        .controlFlags = (int)frame->controlFlags,
         .signalStrength = s_Rssi,
         .packetLoss = (int)((float)s_PacketsLost / s_RX * 100),
     };
 
-    SetMeasurementData(&measurement);
+    RouterSendData();
+
+    s_SendTLMDataTimeOffset = millis();
 }
 
-static bool ValidatePacket(const radio_frame_t *packet)
+static bool ValidatePacket(const radio_obc_frame_t *packet)
 {
     if (packet->magic != RADIO_MAGIC)
     {
         return false;
     }
 
-    uint16_t crc = CalculateCRC16_MCRF4XX((const uint8_t *)packet, sizeof(radio_frame_t) - 2);
+    uint16_t crc = CalculateCRC16_MCRF4XX((const uint8_t *)packet, sizeof(radio_obc_frame_t) - 2);
 
     return crc == packet->crc;
 }
-
-// static void TryRunTest()
-// {
-//     static unsigned long timer;
-//     static uint8_t sequence;
-
-//     if (millis() - timer >= 2000)
-//     {
-//         timer = millis();
-
-//         radiolink_sensor_frame_t sens = {
-//             .pos = {0},
-//             .gyro = {60, 50, 0},
-//             .lat = 51.5287398,
-//             .lon = -0.2664034,
-//             .alt = 100.0f,
-//             .velocity = 50.0f,
-//             .batteryVoltage = 9.3f,
-//             .batteryPercentage = 87,
-//             .pressure = 99900,
-//             .temperature = 290.0f,
-//         };
-//         radiolink_frame_t frame;
-//         radiolink_serialize_sensor_frame(&frame, &sequence, &sens);
-
-//         uint8_t buff[512];
-//         size_t len = sizeof(buff);
-//         radiolink_get_bytes(&frame, buff, &len);
-
-//         TryParsePacket(buff, len);
-//     }
-// }
