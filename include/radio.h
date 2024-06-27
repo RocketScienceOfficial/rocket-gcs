@@ -19,7 +19,8 @@ struct RadioOBCData
 
 struct RadioTLMData
 {
-    bool armed;
+    bool arm_enable;
+    bool arm_disable;
     bool v3v3_enable;
     bool v3v3_disable;
     bool v5_enable;

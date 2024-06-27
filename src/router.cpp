@@ -89,9 +89,13 @@ static void SubmitCMD()
 {
     Serial.println("Submiting command...");
 
-    if (strcmp(s_CMD, "\\arm") == 0)
+    if (strcmp(s_CMD, "\\arm-enable") == 0)
     {
-        LoRaGetCurrentTLMData()->armed = true;
+        LoRaGetCurrentTLMData()->arm_enable = true;
+    }
+    else if (strcmp(s_CMD, "\\arm-disable") == 0)
+    {
+        LoRaGetCurrentTLMData()->arm_disable = true;
     }
     else if (strcmp(s_CMD, "\\voltage-3v3-enable") == 0)
     {
