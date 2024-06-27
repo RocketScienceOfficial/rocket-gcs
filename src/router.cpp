@@ -93,17 +93,29 @@ static void SubmitCMD()
     {
         LoRaGetCurrentTLMData()->armed = true;
     }
-    else if (strcmp(s_CMD, "\\set-voltage-3v3") == 0)
+    else if (strcmp(s_CMD, "\\voltage-3v3-enable") == 0)
     {
-        LoRaGetCurrentTLMData()->v3v3 = true;
+        LoRaGetCurrentTLMData()->v3v3_enable = true;
     }
-    else if (strcmp(s_CMD, "\\set-voltage-5v") == 0)
+    else if (strcmp(s_CMD, "\\voltage-3v3-disable") == 0)
     {
-        LoRaGetCurrentTLMData()->v5 = true;
+        LoRaGetCurrentTLMData()->v3v3_disable = true;
     }
-    else if (strcmp(s_CMD, "\\set-voltage-vbat") == 0)
+    else if (strcmp(s_CMD, "\\voltage-5v-enable") == 0)
     {
-        LoRaGetCurrentTLMData()->vbat = true;
+        LoRaGetCurrentTLMData()->v5_enable = true;
+    }
+    else if (strcmp(s_CMD, "\\voltage-5v-disable") == 0)
+    {
+        LoRaGetCurrentTLMData()->v5_disable = true;
+    }
+    else if (strcmp(s_CMD, "\\voltage-vbat-enable") == 0)
+    {
+        LoRaGetCurrentTLMData()->vbat_enable = true;
+    }
+    else if (strcmp(s_CMD, "\\voltage-vbat-disable") == 0)
+    {
+        LoRaGetCurrentTLMData()->vbat_disable = true;
     }
 }
 

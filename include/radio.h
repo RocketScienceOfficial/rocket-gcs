@@ -20,9 +20,12 @@ struct RadioOBCData
 struct RadioTLMData
 {
     bool armed;
-    bool v3v3;
-    bool v5;
-    bool vbat;
+    bool v3v3_enable;
+    bool v3v3_disable;
+    bool v5_enable;
+    bool v5_disable;
+    bool vbat_enable;
+    bool vbat_disable;
 };
 
 void LoRaInit();

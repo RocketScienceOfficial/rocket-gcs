@@ -29,10 +29,13 @@ typedef struct __attribute__((__packed__)) radio_obc_frame
 
 typedef enum radio_tlm_flags
 {
-    RADIO_TLM_FLAG_ARMED = 0,
-    RADIO_TLM_FLAG_3V3 = 1,
-    RADIO_TLM_FLAG_5V = 2,
-    RADIO_TLM_FLAG_VBAT = 3,
+    RADIO_TLM_FLAG_ARMED = 1 << 0,
+    RADIO_TLM_FLAG_3V3_ENABLE = 1 << 1,
+    RADIO_TLM_FLAG_3V3_DISABLE = 1 << 2,
+    RADIO_TLM_FLAG_5V_ENABLE = 1 << 3,
+    RADIO_TLM_FLAG_5V_DISABLE = 1 << 4,
+    RADIO_TLM_FLAG_VBAT_ENABLE = 1 << 5,
+    RADIO_TLM_FLAG_VBAT_DISABLE = 1 << 6,
 } radio_tlm_flags_t;
 
 typedef struct __attribute__((__packed__)) radio_tlm_frame
@@ -227,19 +230,31 @@ static void SendTLMPacket()
 
     if (s_CurrentTLMData.armed)
     {
-        frame.flags |= 1 << RADIO_TLM_FLAG_ARMED;
+        frame.flags |= RADIO_TLM_FLAG_ARMED;
     }
-    else if (s_CurrentTLMData.v3v3)
+    else if (s_CurrentTLMData.v3v3_enable)
     {
-        frame.flags |= 1 << RADIO_TLM_FLAG_3V3;
+        frame.flags |= RADIO_TLM_FLAG_3V3_ENABLE;
     }
-    else if (s_CurrentTLMData.v5)
+    else if (s_CurrentTLMData.v3v3_disable)
     {
-        frame.flags |= 1 << RADIO_TLM_FLAG_5V;
+        frame.flags |= RADIO_TLM_FLAG_3V3_DISABLE;
     }
-    else if (s_CurrentTLMData.vbat)
+    else if (s_CurrentTLMData.v5_enable)
     {
-        frame.flags |= 1 << RADIO_TLM_FLAG_VBAT;
+        frame.flags |= RADIO_TLM_FLAG_5V_ENABLE;
+    }
+    else if (s_CurrentTLMData.v5_disable)
+    {
+        frame.flags |= RADIO_TLM_FLAG_5V_DISABLE;
+    }
+    else if (s_CurrentTLMData.vbat_enable)
+    {
+        frame.flags |= RADIO_TLM_FLAG_VBAT_ENABLE;
+    }
+    else if (s_CurrentTLMData.vbat_disable)
+    {
+        frame.flags |= RADIO_TLM_FLAG_VBAT_DISABLE;
     }
 
     frame.crc = CalculateCRC16_MCRF4XX((const uint8_t *)&frame, sizeof(frame) - 2);
