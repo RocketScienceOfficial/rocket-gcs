@@ -2,9 +2,10 @@
 
 struct RadioOBCData
 {
-    float roll;
-    float pitch;
-    float yaw;
+    float qw;
+    float qx;
+    float qy;
+    float qz;
     float velocity;
     float batteryVoltage;
     int batteryPercentage;

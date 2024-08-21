@@ -12,9 +12,10 @@
 typedef struct __attribute__((__packed__)) radio_obc_frame
 {
     uint8_t magic;
-    uint8_t roll;
-    uint8_t pitch;
-    uint8_t yaw;
+    uint8_t q0;
+    uint8_t q1;
+    uint8_t q2;
+    uint8_t q3;
     uint16_t velocity;
     uint8_t batteryVoltage10;
     uint8_t batteryPercentage;
@@ -191,9 +192,10 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
     }
 
     s_CurrentOBCData = {
-        .roll = (float)frame->roll,
-        .pitch = (float)frame->pitch,
-        .yaw = (float)frame->yaw,
+        .qw = (float)frame->q0 / 255.0f,
+        .qx = (float)frame->q1 / 255.0f,
+        .qy = (float)frame->q2 / 255.0f,
+        .qz = (float)frame->q3 / 255.0f,
         .velocity = (float)frame->velocity,
         .batteryVoltage = frame->batteryVoltage10 / 10.0f,
         .batteryPercentage = frame->batteryPercentage,
