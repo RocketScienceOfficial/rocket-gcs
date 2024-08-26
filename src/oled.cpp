@@ -142,7 +142,7 @@ void OLEDUpdateScreen(const OLEDInputData &data)
     }
 
     s_Display.drawStringf(0, 13, s_Buffer, "RX: %d", data.rx);
-    s_Display.drawStringf(60, 13, s_Buffer, "TX: %d", data.tx);
+    s_Display.drawStringf(50, 13, s_Buffer, "TX: %d", data.tx);
 
     s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
     s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
@@ -180,7 +180,7 @@ void _OLEDDrawBatteryIndicator(uint16_t x, uint16_t y, uint16_t width, uint16_t 
     s_Display.drawRect(x - width / 2, y - height / 2, width, height);
     s_Display.fillRect(x - width / 2 - width / 10, y - height / 4, width / 10, height / 2);
 
-    uint8_t stepsCount = percentage / (100 / MAX_STEPS_COUNT);
+    uint8_t stepsCount = (uint8_t)ceilf(MAX_STEPS_COUNT * (float)percentage / 100);
 
     for (uint8_t i = 0; i < stepsCount; i++)
     {
