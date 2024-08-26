@@ -69,9 +69,10 @@ void RouterSendData()
     RadioOBCData data = LoRaGetCurrentOBCData();
 
     LOGGER.print("/*");
-    LOGGER.printf("%.1f,", data.roll);
-    LOGGER.printf("%.1f,", data.pitch);
-    LOGGER.printf("%.1f,", data.yaw);
+    LOGGER.printf("%.1f,", data.qw);
+    LOGGER.printf("%.1f,", data.qx);
+    LOGGER.printf("%.1f,", data.qy);
+    LOGGER.printf("%.1f,", data.qz);
     LOGGER.printf("%.1f,", data.velocity);
     LOGGER.printf("%.1f,", data.batteryVoltage);
     LOGGER.printf("%d,", data.batteryPercentage);
