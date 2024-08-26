@@ -205,7 +205,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .state = (int)frame->state,
         .controlFlags = (int)frame->controlFlags,
         .signalStrength = s_Rssi,
-        .packetLoss = (int)((float)s_PacketsLost / s_RX * 100),
+        .packetLoss = (int)((float)s_PacketsLost / (s_RX + s_PacketsLost) * 100),
     };
 
     RouterSendData();
