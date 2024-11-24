@@ -2,6 +2,7 @@
 #include "config.h"
 #include "serial.h"
 #include "maths.h"
+#include "serial.h"
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
@@ -10,6 +11,7 @@
 #define DEVICE_ID 0xDF
 #define OBC_ID 0x11
 #define RADIO_TLM_DATA_SEND_DELAY 100
+#define TEMP_RX_RESET_TIME 5000
 
 static datalink_frame_telemetry_data_obc_t s_CurrentFrame;
 static int s_Rssi;
@@ -17,21 +19,23 @@ static int s_RX;
 static int s_TX;
 static uint8_t s_CurrentSeq;
 static int s_PacketsLost;
+static int s_TempRX;
 static unsigned long s_SendTLMDataTimeOffset;
+static unsigned long s_TempRXTimeOffset;
 
 static void TryParsePacket(uint8_t *buffer, size_t len);
 static void SendTLMPacket();
 
 void LoRaInit()
 {
-    Serial.println("Starting LoRa...");
+    SERIAL_DEBUG_PRINTF("Starting LoRa...\n");
 
     SPI.begin(LORA_SCLK_PIN, LORA_MISO_PIN, LORA_MOSI_PIN);
     LoRa.setPins(LORA_CS_PIN, LORA_RST_PIN, LORA_DIO0_PIN);
 
     if (!LoRa.begin(LORA_FREQ))
     {
-        Serial.println("Starting LoRa failed!");
+        SERIAL_DEBUG_PRINTF("Starting LoRa failed!\n");
 
         while (true)
             ;
@@ -42,7 +46,7 @@ void LoRaInit()
     LoRa.setSpreadingFactor(LORA_SF);
     LoRa.receive();
 
-    Serial.println("Starting LoRa success!");
+    SERIAL_DEBUG_PRINTF("Starting LoRa success!\n");
 }
 
 void LoRaCheck()
@@ -51,9 +55,7 @@ void LoRaCheck()
 
     if (packetSize)
     {
-        Serial.print("Received packet with size: ");
-        Serial.print(packetSize);
-        Serial.println(" bytes");
+        SERIAL_DEBUG_PRINTF("Received packet with size: %d bytes\n", packetSize);
 
         uint8_t buffer[512];
         size_t i = 0;
@@ -62,7 +64,7 @@ void LoRaCheck()
         {
             if (i == packetSize)
             {
-                Serial.println("Something went wrong while parsing packet!");
+                SERIAL_DEBUG_PRINTF("Something went wrong while parsing packet!\n");
 
                 return;
             }
@@ -73,7 +75,7 @@ void LoRaCheck()
             }
             else
             {
-                Serial.println("Buffer overflow while parsing packet!");
+                SERIAL_DEBUG_PRINTF("Buffer overflow while parsing packet!\n");
 
                 return;
             }
@@ -87,6 +89,13 @@ void LoRaCheck()
         SendTLMPacket();
 
         s_SendTLMDataTimeOffset = 0;
+    }
+
+    if (millis() - s_TempRXTimeOffset >= TEMP_RX_RESET_TIME)
+    {
+        s_TempRX = 0;
+        s_PacketsLost = 0;
+        s_TempRXTimeOffset = millis();
     }
 }
 
@@ -116,20 +125,21 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
 
     if (!datalink_deserialize_frame_radio(&frame, buffer, len))
     {
-        Serial.println("Couldn't deserialize packet!");
+        SERIAL_DEBUG_PRINTF("Couldn't deserialize packet!\n");
 
         return;
     }
 
     if (frame.srcId != OBC_ID || frame.destId != DEVICE_ID)
     {
-        Serial.println("Packet source or destination is invalid!");
+        SERIAL_DEBUG_PRINTF("Packet source or destination is invalid!\n");
 
         return;
     }
 
     s_Rssi = LoRa.packetRssi();
     s_RX++;
+    s_TempRX++;
 
     if (frame.seq != s_CurrentSeq)
     {
@@ -147,7 +157,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
 
     if (frame.msgId != DATALINK_MESSAGE_TELEMETRY_DATA_OBC && frame.msgId != DATALINK_MESSAGE_TELEMETRY_DATA_OBC_WITH_RESPONSE)
     {
-        Serial.println("Invalid message ID!");
+        SERIAL_DEBUG_PRINTF("Invalid message ID!\n");
 
         return;
     }
@@ -170,7 +180,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .state = payload->state,
         .controlFlags = payload->controlFlags,
         .signalStrengthNeg = (uint8_t)-s_Rssi,
-        .packetLossPercentage = (uint8_t)((float)s_PacketsLost / (s_RX + s_PacketsLost) * 100),
+        .packetLossPercentage = (uint8_t)((float)s_PacketsLost / (s_TempRX + s_PacketsLost) * 100),
     };
     datalink_frame_structure_serial_t newFrame = {
         .msgId = DATALINK_MESSAGE_TELEMETRY_DATA_GCS,
@@ -185,7 +195,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         s_SendTLMDataTimeOffset = millis();
     }
 
-    Serial.println("Successfully parsed packet!");
+    SERIAL_DEBUG_PRINTF("Successfully parsed packet!\n");
 }
 
 static void SendTLMPacket()
@@ -215,13 +225,13 @@ static void SendTLMPacket()
 
         s_TX++;
 
-        Serial.printf("Successfully sent %d bytes\n", len);
+        SERIAL_DEBUG_PRINTF("Successfully sent %d bytes\n", len);
 
         LoRa.receive();
     }
     else
     {
-        Serial.println("Couldn't serialize packet to send!");
+        SERIAL_DEBUG_PRINTF("Couldn't serialize packet to send!\n");
     }
 
     sequence = sequence == 255 ? 0 : sequence + 1;

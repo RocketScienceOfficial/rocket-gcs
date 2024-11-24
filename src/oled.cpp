@@ -2,6 +2,7 @@
 #include "config.h"
 #include "state.h"
 #include "maths.h"
+#include "serial.h"
 #include <Wire.h>
 #include <SSD1306Wire.h>
 
@@ -114,7 +115,7 @@ void OLEDInit()
     s_Display.drawXbm(0, 0, 128, 64, LOGO_XMB);
     s_Display.display();
 
-    Serial.println("Initialized OLED!");
+    SERIAL_DEBUG_PRINTF("Initialized OLED!\n");
 }
 
 void OLEDUpdateScreen(const OLEDInputData &data)

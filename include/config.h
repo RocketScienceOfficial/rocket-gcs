@@ -1,7 +1,8 @@
 #pragma once
 
+#define IS_DEBUG 0
+
 #define SERIAL_BAUD_RATE 115200
-#define BT_NAME "RocketTTGO"
 
 #define OLED_UPDATE_INTERVAL 1000
 #define OLED_SDA_PIN 21

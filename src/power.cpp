@@ -1,5 +1,6 @@
 #include "power.h"
 #include "config.h"
+#include "serial.h"
 #include "XPowersLib.h"
 #include <Arduino.h>
 #include <Wire.h>
@@ -16,7 +17,7 @@ void PMUInit()
 
         if (!s_PMU->init())
         {
-            Serial.println("Warning: Failed to find AXP2101 power management");
+            SERIAL_DEBUG_PRINTF("Warning: Failed to find AXP2101 power management\n");
 
             delete s_PMU;
 
@@ -24,7 +25,7 @@ void PMUInit()
         }
         else
         {
-            Serial.println("AXP2101 PMU init succeeded, using AXP2101 PMU");
+            SERIAL_DEBUG_PRINTF("AXP2101 PMU init succeeded, using AXP2101 PMU\n");
         }
     }
 

@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #include "config.h"
 #include "radio.h"
 #include "gps.h"
@@ -15,9 +13,6 @@ static bool s_FirstUpdate;
 
 void setup()
 {
-  Serial.begin(SERIAL_BAUD_RATE);
-  Serial.println("Initialized Board!");
-
   SerialControlInit();
   OLEDInit();
   StateInit();

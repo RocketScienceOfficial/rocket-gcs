@@ -1,5 +1,6 @@
 #include "gps.h"
 #include "config.h"
+#include "serial.h"
 #include <Arduino.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include <MicroNMEA.h>
@@ -17,7 +18,7 @@ void GPSInit()
 
     if (!s_GNSS.begin(Serial1))
     {
-        Serial.println("GPS failed to start!");
+        SERIAL_DEBUG_PRINTF("GPS failed to start!\n");
 
         while (1)
             ;
@@ -26,7 +27,7 @@ void GPSInit()
     s_GNSS.setUART1Output(COM_TYPE_NMEA);
     s_GNSS.saveConfiguration();
 
-    Serial.println("GPS started!");
+    SERIAL_DEBUG_PRINTF("GPS started!\n");
 }
 
 void GPSCheck()
@@ -46,7 +47,7 @@ void GPSCheck()
 
             s_Altitude = alt / 1000.0f;
 
-            Serial.println("Updated GPS!");
+            SERIAL_DEBUG_PRINTF("Updated GPS!\n");
         }
     }
 }

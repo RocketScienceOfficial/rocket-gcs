@@ -2,11 +2,8 @@
 #include "radio.h"
 #include "config.h"
 #include <cobs.h>
-#include <BluetoothSerial.h>
-#include <Arduino.h>
 #include <string.h>
 
-static BluetoothSerial SerialBT;
 static uint8_t s_RecvBuffer[512];
 static size_t s_CurrentSize;
 static datalink_frame_structure_serial_t s_CurrentFrame;
@@ -16,16 +13,18 @@ static void ProcessNewFrame();
 
 void SerialControlInit()
 {
-    SerialBT.begin(BT_NAME);
+    Serial.begin(SERIAL_BAUD_RATE);
+
+    SERIAL_DEBUG_PRINTF("Initialized serial port!\n");
 }
 
 void SerialControlUpdate()
 {
     static uint8_t cobsDecodedBuffer[512];
 
-    if (SerialBT.available())
+    if (Serial.available())
     {
-        int c = SerialBT.read();
+        int c = Serial.read();
 
         if (s_CurrentSize >= sizeof(s_RecvBuffer))
         {
@@ -60,8 +59,8 @@ void SerialControlSendFrame(const datalink_frame_structure_serial_t *frame)
         int newLen = cobs_encode(buffer, len, cobsEncodedBuffer);
         cobsEncodedBuffer[newLen++] = 0x00;
 
-        SerialBT.write(cobsEncodedBuffer, newLen);
-        SerialBT.flush();
+        Serial.write(cobsEncodedBuffer, newLen);
+        Serial.flush();
     }
 }
 

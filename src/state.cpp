@@ -1,5 +1,6 @@
 #include "state.h"
 #include "config.h"
+#include "serial.h"
 #include <Arduino.h>
 
 static int s_CurrentStateIndex = 0;
@@ -12,7 +13,7 @@ void StateInit()
 {
     pinMode(BUTTON_PIN, INPUT);
 
-    Serial.println("Initialized state!");
+    SERIAL_DEBUG_PRINTF("Initialized state!\n");
 }
 
 void StateCheck()
@@ -37,7 +38,7 @@ void StateCheck()
                 s_CurrentStateIndex = 0;
             }
 
-            Serial.println("State changed");
+            SERIAL_DEBUG_PRINTF("State changed\n");
 
             s_ButtonPressed = true;
         }
