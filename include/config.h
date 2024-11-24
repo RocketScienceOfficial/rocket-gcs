@@ -10,8 +10,9 @@
 #define GPS_RX_PIN 12
 #define GPS_TX_PIN 34
 
-#define LORA_FREQ 434500000
-#define LORA_BAND 125E3
+#define LORA_FREQ 433000000
+#define LORA_BAND 250000
+#define LORA_SF 7
 #define LORA_SCLK_PIN 5
 #define LORA_MISO_PIN 19
 #define LORA_MOSI_PIN 27

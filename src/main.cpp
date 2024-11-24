@@ -5,7 +5,7 @@
 #include "gps.h"
 #include "oled.h"
 #include "state.h"
-#include "router.h"
+#include "serial.h"
 #include "power.h"
 
 static unsigned long s_PMULastUpdate;
@@ -15,10 +15,10 @@ static bool s_FirstUpdate;
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(SERIAL_BAUD_RATE);
   Serial.println("Initialized Board!");
 
-  RouterInit();
+  SerialControlInit();
   OLEDInit();
   StateInit();
   GPSInit();
@@ -30,10 +30,10 @@ void setup()
 
 void loop()
 {
+  SerialControlUpdate();
   StateCheck();
   GPSCheck();
   LoRaCheck();
-  RouterUpdate();
 
   s_Now = millis();
 
@@ -54,14 +54,14 @@ void loop()
         .tx = LoRaGetTX(),
         .batteryVoltage = PMUGetCurrentData().batteryVoltage,
         .batteryPercentage = PMUGetCurrentData().batteryPercentage,
-        .targetBatteryVoltage = LoRaGetCurrentOBCData().batteryVoltage,
-        .targetBatteryPercentage = LoRaGetCurrentOBCData().batteryPercentage,
+        .targetBatteryVoltage = (float)LoRaGetCurrentFrame()->batteryVoltage10 / 10,
+        .targetBatteryPercentage = LoRaGetCurrentFrame()->batteryPercentage,
         .lat = GPSGetLatitude(),
         .lon = GPSGetLongitude(),
         .alt = GPSGetAltitude(),
-        .targetLat = LoRaGetCurrentOBCData().latitude,
-        .targetLon = LoRaGetCurrentOBCData().longitude,
-        .targetAlt = (float)LoRaGetCurrentOBCData().altitude,
+        .targetLat = LoRaGetCurrentFrame()->lat,
+        .targetLon = LoRaGetCurrentFrame()->lon,
+        .targetAlt = (float)LoRaGetCurrentFrame()->alt,
     };
     OLEDUpdateScreen(data);
   }

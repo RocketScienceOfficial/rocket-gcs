@@ -16,22 +16,3 @@ float CalculateGeoDistance(float lat1, float lon1, float lat2, float lon2)
 
     return (float)c * EARTH_RADIUS;
 }
-
-uint16_t CalculateCRC16_MCRF4XX(const uint8_t *data, size_t length)
-{
-    uint16_t crc = 0xFFFF;
-    uint8_t t;
-    uint8_t L;
-
-    while (length--)
-    {
-        crc ^= *data++;
-        L = crc ^ (crc << 4);
-        t = (L << 3) | (L >> 5);
-        L ^= (t & 0x07);
-        t = (t & 0xF8) ^ (((t << 1) | (t >> 7)) & 0x0F) ^ (uint8_t)(crc >> 8);
-        crc = (L << 8) | t;
-    }
-
-    return crc;
-}

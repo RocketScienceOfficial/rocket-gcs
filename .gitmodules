@@ -1,0 +1,3 @@
+[submodule "lib/datalink-c"]
+	path = lib/datalink-c
+	url = https://github.com/RocketScienceOfficial/datalink-c

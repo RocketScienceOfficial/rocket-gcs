@@ -5,7 +5,7 @@
 #include <Wire.h>
 #include <SSD1306Wire.h>
 
-#define SIGNAL_LOST_TIMEOUT_MS 1000
+#define SIGNAL_LOST_TIMEOUT_MS 3000
 
 static const uint8_t LOGO_XMB[] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

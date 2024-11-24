@@ -1,54 +1,17 @@
 #include "radio.h"
 #include "config.h"
-#include "router.h"
+#include "serial.h"
 #include "maths.h"
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
+#include <string.h>
 
-#define RADIO_TLM_DATA_SEND_DELAY 250
-#define RADIO_MAGIC 0x7B
+#define DEVICE_ID 0xDF
+#define OBC_ID 0x11
+#define RADIO_TLM_DATA_SEND_DELAY 100
 
-typedef struct __attribute__((__packed__)) radio_obc_frame
-{
-    uint8_t magic;
-    float qw;
-    float qx;
-    float qy;
-    float qz;
-    uint16_t velocity;
-    uint8_t batteryVoltage10;
-    uint8_t batteryPercentage;
-    double lat;
-    double lon;
-    uint16_t alt;
-    uint8_t state;
-    uint8_t controlFlags;
-    uint8_t seq;
-    uint16_t crc;
-} radio_obc_frame_t;
-
-typedef enum radio_tlm_flags
-{
-    RADIO_TLM_FLAG_ARM_ENABLE = 1 << 0,
-    RADIO_TLM_FLAG_ARM_DISABLE = 1 << 1,
-    RADIO_TLM_FLAG_3V3_ENABLE = 1 << 2,
-    RADIO_TLM_FLAG_3V3_DISABLE = 1 << 3,
-    RADIO_TLM_FLAG_5V_ENABLE = 1 << 4,
-    RADIO_TLM_FLAG_5V_DISABLE = 1 << 5,
-    RADIO_TLM_FLAG_VBAT_ENABLE = 1 << 6,
-    RADIO_TLM_FLAG_VBAT_DISABLE = 1 << 7,
-} radio_tlm_flags_t;
-
-typedef struct __attribute__((__packed__)) radio_tlm_frame
-{
-    uint8_t magic;
-    uint8_t flags;
-    uint16_t crc;
-} radio_tlm_frame_t;
-
-static RadioOBCData s_CurrentOBCData;
-static RadioTLMData s_CurrentTLMData;
+static datalink_frame_telemetry_data_obc_t s_CurrentFrame;
 static int s_Rssi;
 static int s_RX;
 static int s_TX;
@@ -57,7 +20,6 @@ static int s_PacketsLost;
 static unsigned long s_SendTLMDataTimeOffset;
 
 static void TryParsePacket(uint8_t *buffer, size_t len);
-static bool ValidatePacket(const radio_obc_frame_t *packet);
 static void SendTLMPacket();
 
 void LoRaInit()
@@ -65,26 +27,19 @@ void LoRaInit()
     Serial.println("Starting LoRa...");
 
     SPI.begin(LORA_SCLK_PIN, LORA_MISO_PIN, LORA_MOSI_PIN);
-
-    delay(1000);
-
     LoRa.setPins(LORA_CS_PIN, LORA_RST_PIN, LORA_DIO0_PIN);
 
     if (!LoRa.begin(LORA_FREQ))
     {
         Serial.println("Starting LoRa failed!");
 
-        while (1)
+        while (true)
             ;
     }
 
     LoRa.setFrequency(LORA_FREQ);
     LoRa.setSignalBandwidth(LORA_BAND);
-    LoRa.setSpreadingFactor(8);
-    // LoRa.setCodingRate4(5);
-    // LoRa.setSyncWord(0x14);
-    // LoRa.setPreambleLength(16);
-    // LoRa.enableCrc();
+    LoRa.setSpreadingFactor(LORA_SF);
     LoRa.receive();
 
     Serial.println("Starting LoRa success!");
@@ -129,9 +84,9 @@ void LoRaCheck()
 
     if (s_SendTLMDataTimeOffset != 0 && millis() - s_SendTLMDataTimeOffset >= RADIO_TLM_DATA_SEND_DELAY)
     {
-        s_SendTLMDataTimeOffset = 0;
-
         SendTLMPacket();
+
+        s_SendTLMDataTimeOffset = 0;
     }
 }
 
@@ -150,30 +105,25 @@ int LoRaGetTX()
     return s_TX;
 }
 
-RadioOBCData LoRaGetCurrentOBCData()
+const datalink_frame_telemetry_data_obc_t *LoRaGetCurrentFrame()
 {
-    return s_CurrentOBCData;
-}
-
-RadioTLMData *LoRaGetCurrentTLMData()
-{
-    return &s_CurrentTLMData;
+    return &s_CurrentFrame;
 }
 
 static void TryParsePacket(uint8_t *buffer, size_t len)
 {
-    if (len != sizeof(radio_obc_frame_t))
+    datalink_frame_structure_radio_t frame;
+
+    if (!datalink_deserialize_frame_radio(&frame, buffer, len))
     {
-        Serial.println("Invalid packet length!");
+        Serial.println("Couldn't deserialize packet!");
 
         return;
     }
 
-    radio_obc_frame_t *frame = (radio_obc_frame_t *)buffer;
-
-    if (!ValidatePacket(frame))
+    if (frame.srcId != OBC_ID || frame.destId != DEVICE_ID)
     {
-        Serial.println("Couldn't deserialize packet!");
+        Serial.println("Packet source or destination is invalid!");
 
         return;
     }
@@ -181,10 +131,10 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
     s_Rssi = LoRa.packetRssi();
     s_RX++;
 
-    if (frame->seq != s_CurrentSeq)
+    if (frame.seq != s_CurrentSeq)
     {
-        s_PacketsLost += frame->seq > s_CurrentSeq ? frame->seq - s_CurrentSeq : 256 + frame->seq - s_CurrentSeq;
-        s_CurrentSeq = frame->seq + 1;
+        s_PacketsLost += frame.seq > s_CurrentSeq ? frame.seq - s_CurrentSeq : 256 + frame.seq - s_CurrentSeq;
+        s_CurrentSeq = frame.seq + 1;
     }
     else if (s_CurrentSeq == 255)
     {
@@ -195,96 +145,84 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         s_CurrentSeq++;
     }
 
-    s_CurrentOBCData = {
-        .qw = (float)frame->qw,
-        .qx = (float)frame->qx,
-        .qy = (float)frame->qy,
-        .qz = (float)frame->qz,
-        .velocity = (float)frame->velocity,
-        .batteryVoltage = frame->batteryVoltage10 / 10.0f,
-        .batteryPercentage = frame->batteryPercentage,
-        .latitude = frame->lat,
-        .longitude = frame->lon,
-        .altitude = (int)frame->alt,
-        .state = (int)frame->state,
-        .controlFlags = (int)frame->controlFlags,
-        .signalStrength = s_Rssi,
-        .packetLoss = (int)((float)s_PacketsLost / (s_RX + s_PacketsLost) * 100),
-    };
-
-    RouterSendData();
-
-    s_SendTLMDataTimeOffset = millis();
-}
-
-static bool ValidatePacket(const radio_obc_frame_t *packet)
-{
-    if (packet->magic != RADIO_MAGIC)
+    if (frame.msgId != DATALINK_MESSAGE_TELEMETRY_DATA_OBC && frame.msgId != DATALINK_MESSAGE_TELEMETRY_DATA_OBC_WITH_RESPONSE)
     {
-        return false;
+        Serial.println("Invalid message ID!");
+
+        return;
     }
 
-    uint16_t crc = CalculateCRC16_MCRF4XX((const uint8_t *)packet, sizeof(radio_obc_frame_t) - 2);
+    const datalink_frame_telemetry_data_obc_t *payload = (const datalink_frame_telemetry_data_obc_t *)frame.payload;
 
-    return crc == packet->crc;
+    s_CurrentFrame = *payload;
+
+    datalink_frame_telemetry_data_gcs_t newPayload = {
+        .qw = payload->qw,
+        .qx = payload->qx,
+        .qy = payload->qy,
+        .qz = payload->qz,
+        .velocity = payload->velocity,
+        .batteryVoltage10 = payload->batteryVoltage10,
+        .batteryPercentage = payload->batteryPercentage,
+        .lat = payload->lat,
+        .lon = payload->lon,
+        .alt = payload->alt,
+        .state = payload->state,
+        .controlFlags = payload->controlFlags,
+        .signalStrengthNeg = (uint8_t)-s_Rssi,
+        .packetLossPercentage = (uint8_t)((float)s_PacketsLost / (s_RX + s_PacketsLost) * 100),
+    };
+    datalink_frame_structure_serial_t newFrame = {
+        .msgId = DATALINK_MESSAGE_TELEMETRY_DATA_GCS,
+        .len = sizeof(newPayload),
+    };
+    memcpy(newFrame.payload, &newPayload, sizeof(newPayload));
+
+    SerialControlSendFrame(&newFrame);
+
+    if (frame.msgId == DATALINK_MESSAGE_TELEMETRY_DATA_OBC_WITH_RESPONSE)
+    {
+        s_SendTLMDataTimeOffset = millis();
+    }
+
+    Serial.println("Successfully parsed packet!");
 }
 
 static void SendTLMPacket()
 {
-    radio_tlm_frame_t frame = {
-        .magic = RADIO_MAGIC,
+    static uint8_t sequence = 0;
+
+    datalink_frame_telemetry_response_t payload = {
+        .controlFlags = SerialControlGetCurrentControlFlags(),
     };
+    datalink_frame_structure_radio_t frame = {
+        .seq = sequence,
+        .srcId = DEVICE_ID,
+        .destId = OBC_ID,
+        .msgId = DATALINK_MESSAGE_TELEMETRY_RESPONSE,
+        .len = sizeof(payload),
+    };
+    memcpy(frame.payload, &payload, sizeof(payload));
 
-    if (s_CurrentTLMData.arm_enable)
+    uint8_t buffer[512];
+    int len = sizeof(buffer);
+
+    if (datalink_serialize_frame_radio(&frame, buffer, &len))
     {
-        frame.flags |= RADIO_TLM_FLAG_ARM_ENABLE;
+        LoRa.beginPacket();
+        LoRa.write(buffer, len);
+        LoRa.endPacket();
+
+        s_TX++;
+
+        Serial.printf("Successfully sent %d bytes\n", len);
+
+        LoRa.receive();
     }
-    else if (s_CurrentTLMData.arm_disable)
+    else
     {
-        frame.flags |= RADIO_TLM_FLAG_ARM_DISABLE;
-    }
-    else if (s_CurrentTLMData.v3v3_enable)
-    {
-        frame.flags |= RADIO_TLM_FLAG_3V3_ENABLE;
-    }
-    else if (s_CurrentTLMData.v3v3_disable)
-    {
-        frame.flags |= RADIO_TLM_FLAG_3V3_DISABLE;
-    }
-    else if (s_CurrentTLMData.v5_enable)
-    {
-        frame.flags |= RADIO_TLM_FLAG_5V_ENABLE;
-    }
-    else if (s_CurrentTLMData.v5_disable)
-    {
-        frame.flags |= RADIO_TLM_FLAG_5V_DISABLE;
-    }
-    else if (s_CurrentTLMData.vbat_enable)
-    {
-        frame.flags |= RADIO_TLM_FLAG_VBAT_ENABLE;
-    }
-    else if (s_CurrentTLMData.vbat_disable)
-    {
-        frame.flags |= RADIO_TLM_FLAG_VBAT_DISABLE;
+        Serial.println("Couldn't serialize packet to send!");
     }
 
-    frame.crc = CalculateCRC16_MCRF4XX((const uint8_t *)&frame, sizeof(frame) - 2);
-
-    const uint8_t *buffer = (const uint8_t *)&frame;
-    size_t size = sizeof(frame);
-
-    LoRa.beginPacket();
-
-    for (size_t i = 0; i < size; i++)
-    {
-        LoRa.write(buffer[i]);
-    }
-
-    LoRa.endPacket();
-
-    memset(&s_CurrentTLMData, 0, sizeof(s_CurrentTLMData));
-
-    s_TX++;
-
-    Serial.printf("Successfully sent %f bytes\n", size);
+    sequence = sequence == 255 ? 0 : sequence + 1;
 }
