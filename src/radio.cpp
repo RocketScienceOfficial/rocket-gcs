@@ -10,7 +10,7 @@
 
 #define DEVICE_ID 0xDF
 #define OBC_ID 0x11
-#define RADIO_TLM_DATA_SEND_DELAY 100
+#define RADIO_TLM_DATA_SEND_DELAY 50
 #define TEMP_RX_RESET_TIME 5000
 
 static datalink_frame_telemetry_data_obc_t s_CurrentFrame;
