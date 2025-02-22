@@ -1,11 +1,15 @@
 # Rocket Ground Station Control
 
 ## Overview
-Simple code for TTGO Ground Station for rocket
+Code for TTGO Ground Station for rocket.
 
-It's written in Visual Studio Code using PlatformIO extension
+It's written in Visual Studio Code using PlatformIO extension, so it's easy to build and upload to the board.
+
+## Preview
+
+![](https://github.com/RocketScienceOfficial/rocket-gcs/blob/main/assets/Preview.png)
 
 ## Features
- - Radio messages parsing
+ - Radio messages parsing using DataLink protocol
  - OLED screen driver
- - Battery state preview
+ - Battery state preview for both Rocket and GCS
