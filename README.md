@@ -7,7 +7,7 @@ It's written in Visual Studio Code using PlatformIO extension, so it's easy to b
 
 ## Preview
 
-![](https://github.com/RocketScienceOfficial/rocket-gcs/blob/main/assets/Preview.png)
+![](https://github.com/RocketScienceOfficial/rocket-gcs/blob/main/assets/Preview.jpg)
 
 ## Features
  - Radio messages parsing using DataLink protocol
