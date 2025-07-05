@@ -49,7 +49,7 @@ void loop()
         .tx = LoRaGetTX(),
         .batteryVoltage = PMUGetCurrentData().batteryVoltage,
         .batteryPercentage = PMUGetCurrentData().batteryPercentage,
-        .targetBatteryVoltage = (float)LoRaGetCurrentFrame()->batteryVoltage10 / 10,
+        .targetBatteryVoltage = (float)LoRaGetCurrentFrame()->batteryVoltage100 / 100.0f,
         .targetBatteryPercentage = LoRaGetCurrentFrame()->batteryPercentage,
         .lat = GPSGetLatitude(),
         .lon = GPSGetLongitude(),
