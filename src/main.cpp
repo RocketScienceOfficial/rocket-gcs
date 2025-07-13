@@ -9,7 +9,6 @@
 static unsigned long s_PMULastUpdate;
 static unsigned long s_OLEDLastUpdate;
 static unsigned long s_Now;
-static bool s_FirstUpdate;
 
 void setup()
 {
@@ -32,14 +31,14 @@ void loop()
 
   s_Now = millis();
 
-  if (s_Now - s_PMULastUpdate >= PMU_UPDATE_INTERVAL || s_FirstUpdate)
+  if (s_Now - s_PMULastUpdate >= PMU_UPDATE_INTERVAL)
   {
     s_PMULastUpdate = s_Now;
 
     PMURead();
   }
 
-  if (s_Now - s_OLEDLastUpdate >= OLED_UPDATE_INTERVAL || StateChanged() || s_FirstUpdate)
+  if (s_Now - s_OLEDLastUpdate >= OLED_UPDATE_INTERVAL || StateChanged())
   {
     s_OLEDLastUpdate = s_Now;
 
@@ -61,6 +60,4 @@ void loop()
     };
     OLEDUpdateScreen(data);
   }
-
-  s_FirstUpdate = true;
 }
