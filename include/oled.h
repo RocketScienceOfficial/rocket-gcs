@@ -17,6 +17,7 @@ struct OLEDInputData
     double targetLat;
     double targetLon;
     float targetAlt;
+    int velocity;
 };
 
 void OLEDInit();

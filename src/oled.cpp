@@ -142,19 +142,32 @@ void OLEDUpdateScreen(const OLEDInputData &data)
         s_Display.drawStringf(0, 0, s_Buffer, "NO SIGNAL");
     }
 
-    s_Display.drawStringf(0, 13, s_Buffer, "RX: %d", data.rx);
-    s_Display.drawStringf(50, 13, s_Buffer, "TX: %d", data.tx);
+    if (StateGetCurrent() == SystemState::GCS || StateGetCurrent() == SystemState::ROCKET)
+    {
+        s_Display.drawStringf(0, 13, s_Buffer, "RX: %d", data.rx);
+        s_Display.drawStringf(50, 13, s_Buffer, "TX: %d", data.tx);
 
-    s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
-    s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
-    s_Display.drawStringf(0, 52, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lon : data.targetLon);
+        s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
+        s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
+        s_Display.drawStringf(0, 52, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lon : data.targetLon);
 
-    _OLEDDrawBatteryIndicator(110, 41, 30, 15, StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
+        _OLEDDrawBatteryIndicator(110, 41, 30, 15, StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
 
-    s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
-    s_Display.drawStringf(127, 0, s_Buffer, StateGetCurrent() == SystemState::GCS ? "GCS" : "ROCKET");
-    s_Display.drawStringf(127, 18, s_Buffer, "%d %%", StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
-    s_Display.drawStringf(127, 53, s_Buffer, "%.2f V", StateGetCurrent() == SystemState::GCS ? data.batteryVoltage : data.targetBatteryVoltage);
+        s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
+        s_Display.drawStringf(127, 0, s_Buffer, StateGetCurrent() == SystemState::GCS ? "GCS" : "ROCKET");
+        s_Display.drawStringf(127, 18, s_Buffer, "%d %%", StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
+        s_Display.drawStringf(127, 53, s_Buffer, "%.2f V", StateGetCurrent() == SystemState::GCS ? data.batteryVoltage : data.targetBatteryVoltage);
+    }
+    else if (StateGetCurrent() == SystemState::OTHER)
+    {
+        s_Display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
+
+        s_Display.setFont(ArialMT_Plain_24);
+        s_Display.drawStringf(63, 32, s_Buffer, "%d", data.velocity);
+
+        s_Display.setFont(ArialMT_Plain_10);
+        s_Display.drawStringf(63, 53, s_Buffer, "km/h");
+    }
 
     s_Display.display();
 }

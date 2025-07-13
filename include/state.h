@@ -1,11 +1,12 @@
 #pragma once
 
-#define SYSTEM_STATES_COUNT 2
+#define SYSTEM_STATES_COUNT 3
 
 enum class SystemState
 {
     GCS,
     ROCKET,
+    OTHER,
 };
 
 void StateInit();
