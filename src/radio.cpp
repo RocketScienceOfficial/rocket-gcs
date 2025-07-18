@@ -171,7 +171,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .qx = payload->qx,
         .qy = payload->qy,
         .qz = payload->qz,
-        .velocity = payload->velocity,
+        .velocity_kmh = payload->velocity_kmh,
         .batteryVoltage100 = payload->batteryVoltage100,
         .batteryPercentage = payload->batteryPercentage,
         .lat = payload->lat,

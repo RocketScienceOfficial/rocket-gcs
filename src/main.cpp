@@ -56,7 +56,7 @@ void loop()
         .targetLat = LoRaGetCurrentFrame()->lat,
         .targetLon = LoRaGetCurrentFrame()->lon,
         .targetAlt = (float)LoRaGetCurrentFrame()->alt,
-        .velocity = (int)LoRaGetCurrentFrame()->velocity,
+        .velocity = (int)LoRaGetCurrentFrame()->velocity_kmh,
     };
     OLEDUpdateScreen(data);
   }
