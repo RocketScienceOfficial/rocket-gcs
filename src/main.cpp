@@ -42,22 +42,6 @@ void loop()
   {
     s_OLEDLastUpdate = s_Now;
 
-    OLEDInputData data = {
-        .rssi = LoRaGetRssi(),
-        .rx = LoRaGetRX(),
-        .tx = LoRaGetTX(),
-        .batteryVoltage = PMUGetCurrentData().batteryVoltage,
-        .batteryPercentage = PMUGetCurrentData().batteryPercentage,
-        .targetBatteryVoltage = (float)LoRaGetCurrentFrame()->batteryVoltage100 / 100.0f,
-        .targetBatteryPercentage = LoRaGetCurrentFrame()->batteryPercentage,
-        .lat = GPSGetLatitude(),
-        .lon = GPSGetLongitude(),
-        .alt = GPSGetAltitude(),
-        .targetLat = LoRaGetCurrentFrame()->lat,
-        .targetLon = LoRaGetCurrentFrame()->lon,
-        .targetAlt = (float)LoRaGetCurrentFrame()->alt,
-        .velocity = (int)LoRaGetCurrentFrame()->velocity_kmh,
-    };
-    OLEDUpdateScreen(data);
+    OLEDUpdateScreen();
   }
 }

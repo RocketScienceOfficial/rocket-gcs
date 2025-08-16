@@ -1,6 +1,7 @@
 #include "radio.h"
 #include "config.h"
 #include "serial.h"
+#include "gps.h"
 #include "maths.h"
 #include "serial.h"
 #include <Arduino.h>
@@ -177,10 +178,15 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .lat = payload->lat,
         .lon = payload->lon,
         .alt = payload->alt,
+        .gcsLat = (int)(GPSGetLatitude() * 10000000),
+        .gcsLon = (int)(GPSGetLongitude() * 10000000),
+        .gpsData = payload->gpsData,
         .state = payload->state,
         .controlFlags = payload->controlFlags,
         .signalStrengthNeg = (uint8_t)-s_Rssi,
         .packetLossPercentage = (uint8_t)((float)s_PacketsLost / (s_TempRX + s_PacketsLost) * 100),
+        .packetsReceived = (uint16_t)s_RX,
+        .packetsTransmitted = (uint16_t)s_TX,
     };
     datalink_frame_structure_serial_t newFrame = {
         .msgId = DATALINK_MESSAGE_TELEMETRY_DATA_GCS,

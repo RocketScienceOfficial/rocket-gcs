@@ -3,6 +3,9 @@
 #include "state.h"
 #include "maths.h"
 #include "serial.h"
+#include "radio.h"
+#include "gps.h"
+#include "power.h"
 #include <Wire.h>
 #include <SSD1306Wire.h>
 
@@ -118,24 +121,24 @@ void OLEDInit()
     SERIAL_DEBUG_PRINTF("Initialized OLED!\n");
 }
 
-void OLEDUpdateScreen(const OLEDInputData &data)
+void OLEDUpdateScreen()
 {
     s_Display.clear();
 
     s_Display.setTextAlignment(TEXT_ALIGN_LEFT);
 
-    if (data.rx != s_LastRX)
+    if (LoRaGetRX() != s_LastRX)
     {
         s_LastUpdateTime = millis();
     }
 
-    s_LastRX = data.rx;
+    s_LastRX = LoRaGetRX();
 
-    if (data.rssi < 0 && millis() - s_LastUpdateTime < SIGNAL_LOST_TIMEOUT_MS)
+    if (LoRaGetRssi() < 0 && millis() - s_LastUpdateTime < SIGNAL_LOST_TIMEOUT_MS)
     {
-        _OLEDDrawProgressBar(0, 2, 45, 6, (uint8_t)_GetRSSIPercentage(data.rssi));
+        _OLEDDrawProgressBar(0, 2, 45, 6, (uint8_t)_GetRSSIPercentage(LoRaGetRssi()));
 
-        s_Display.drawStringf(51, 0, s_Buffer, "%d", data.rssi);
+        s_Display.drawStringf(51, 0, s_Buffer, "%d", LoRaGetRssi());
     }
     else
     {
@@ -144,26 +147,34 @@ void OLEDUpdateScreen(const OLEDInputData &data)
 
     if (StateGetCurrent() == SystemState::GCS || StateGetCurrent() == SystemState::ROCKET)
     {
-        s_Display.drawStringf(0, 13, s_Buffer, "RX: %d", data.rx);
-        s_Display.drawStringf(50, 13, s_Buffer, "TX: %d", data.tx);
+        s_Display.drawStringf(0, 13, s_Buffer, "RX: %d", LoRaGetRX());
+        s_Display.drawStringf(50, 13, s_Buffer, "TX: %d", LoRaGetTX());
 
-        s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(data.lat, data.lon, data.targetLat, data.targetLon));
-        s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lat : data.targetLat);
-        s_Display.drawStringf(0, 52, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? data.lon : data.targetLon);
+        double lat = GPSGetLatitude();
+        double lon = GPSGetLongitude();
+        double targetLat = (double)LoRaGetCurrentFrame()->lat / 10000000.0;
+        double targetLon = (double)LoRaGetCurrentFrame()->lon / 10000000.0;
 
-        _OLEDDrawBatteryIndicator(110, 41, 30, 15, StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
+        s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(lat, lon, targetLat, targetLon));
+        s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? lat : targetLat);
+        s_Display.drawStringf(0, 52, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? lon : targetLon);
+
+        int batteryPercentage = StateGetCurrent() == SystemState::GCS ? LoRaGetCurrentFrame()->batteryPercentage : PMUGetCurrentData().batteryPercentage;
+        float batteryVoltage = StateGetCurrent() == SystemState::GCS ? (float)LoRaGetCurrentFrame()->batteryVoltage100 / 100.0f : PMUGetCurrentData().batteryVoltage;
+
+        _OLEDDrawBatteryIndicator(110, 41, 30, 15, (uint8_t)batteryPercentage);
 
         s_Display.setTextAlignment(TEXT_ALIGN_RIGHT);
         s_Display.drawStringf(127, 0, s_Buffer, StateGetCurrent() == SystemState::GCS ? "GCS" : "ROCKET");
-        s_Display.drawStringf(127, 18, s_Buffer, "%d %%", StateGetCurrent() == SystemState::GCS ? data.batteryPercentage : data.targetBatteryPercentage);
-        s_Display.drawStringf(127, 53, s_Buffer, "%.2f V", StateGetCurrent() == SystemState::GCS ? data.batteryVoltage : data.targetBatteryVoltage);
+        s_Display.drawStringf(127, 18, s_Buffer, "%d %%", batteryPercentage);
+        s_Display.drawStringf(127, 53, s_Buffer, "%.2f V", batteryVoltage);
     }
     else if (StateGetCurrent() == SystemState::OTHER)
     {
         s_Display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
 
         s_Display.setFont(ArialMT_Plain_24);
-        s_Display.drawStringf(63, 32, s_Buffer, "%d", data.velocity);
+        s_Display.drawStringf(63, 32, s_Buffer, "%d", LoRaGetCurrentFrame()->velocity_kmh);
 
         s_Display.setFont(ArialMT_Plain_10);
         s_Display.drawStringf(63, 53, s_Buffer, "km/h");
