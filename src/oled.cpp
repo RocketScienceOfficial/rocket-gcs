@@ -159,8 +159,8 @@ void OLEDUpdateScreen()
         s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? lat : targetLat);
         s_Display.drawStringf(0, 52, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? lon : targetLon);
 
-        int batteryPercentage = StateGetCurrent() == SystemState::GCS ? LoRaGetCurrentFrame()->batteryPercentage : PMUGetCurrentData().batteryPercentage;
-        float batteryVoltage = StateGetCurrent() == SystemState::GCS ? (float)LoRaGetCurrentFrame()->batteryVoltage100 / 100.0f : PMUGetCurrentData().batteryVoltage;
+        int batteryPercentage = StateGetCurrent() == SystemState::GCS ? PMUGetCurrentData().batteryPercentage : LoRaGetCurrentFrame()->batteryPercentage;
+        float batteryVoltage = StateGetCurrent() == SystemState::GCS ? PMUGetCurrentData().batteryVoltage : (float)LoRaGetCurrentFrame()->batteryVoltage100 / 100.0f;
 
         _OLEDDrawBatteryIndicator(110, 41, 30, 15, (uint8_t)batteryPercentage);
 
