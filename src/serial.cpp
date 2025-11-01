@@ -76,5 +76,7 @@ static void ProcessNewFrame()
         const datalink_frame_telemetry_response_t *payload = (const datalink_frame_telemetry_response_t *)s_CurrentFrame.payload;
 
         s_CurrentControlFlags = payload->flags;
+
+        SERIAL_DEBUG_PRINTF("Updated flags!\n");
     }
 }
