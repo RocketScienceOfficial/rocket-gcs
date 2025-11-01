@@ -182,6 +182,7 @@ static void TryParsePacket(uint8_t *buffer, size_t len)
         .gcsLon = (int)(GPSGetLongitude() * 10000000),
         .gpsData = payload->gpsData,
         .state = payload->state,
+        .ignFlags = payload->ignFlags,
         .controlFlags = payload->controlFlags,
         .signalStrengthNeg = (uint8_t)-s_Rssi,
         .packetLossPercentage = (uint8_t)((float)s_PacketsLost / (s_TempRX + s_PacketsLost) * 100),
@@ -209,7 +210,7 @@ static void SendTLMPacket()
     static uint8_t sequence = 0;
 
     datalink_frame_telemetry_response_t payload = {
-        .controlFlags = SerialControlGetCurrentControlFlags(),
+        .flags = SerialControlGetCurrentControlFlags(),
     };
     datalink_frame_structure_radio_t frame = {
         .seq = sequence,
