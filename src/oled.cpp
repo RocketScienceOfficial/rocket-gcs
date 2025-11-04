@@ -155,7 +155,11 @@ void OLEDUpdateScreen()
         double targetLat = (double)LoRaGetCurrentFrame()->lat / 10000000.0;
         double targetLon = (double)LoRaGetCurrentFrame()->lon / 10000000.0;
 
-        s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(lat, lon, targetLat, targetLon));
+        if (lat != 0 && targetLat != 0)
+        {
+            s_Display.drawStringf(0, 27, s_Buffer, "%d m", (int)CalculateGeoDistance(lat, lon, targetLat, targetLon));
+        }
+
         s_Display.drawStringf(0, 42, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? lat : targetLat);
         s_Display.drawStringf(0, 52, s_Buffer, "%.7f", StateGetCurrent() == SystemState::GCS ? lon : targetLon);
 
